@@ -1,0 +1,76 @@
+const db = require("../common/db_handler");
+const { jsDateToPostgres } = require("../common/utils");
+
+async function createOne(location) {
+    const attributesString = Object.keys(location).join(",");
+    const valuesString = Object.keys(location)
+        .map((k) => `$<${k}>`)
+        .join(",");
+
+    return await db.one(
+        `INSERT INTO reservations(${attributesString}) VALUES(${valuesString}) RETURNING *;`,
+        location
+    );
+}
+
+async function getOne(id) {
+    return await db.oneOrNone("SELECT * FROM reservations WHERE id=${id}", {
+        id,
+    });
+}
+
+async function getAll() {
+    const res = await db.manyOrNone("SELECT * FROM reservations");
+
+    if (!res) {
+        return [];
+    }
+
+    return res;
+}
+
+async function updateOne(id, reservation) {
+    const attrsStr = Object.keys(reservation)
+        .map((k) => ` ${k} = $<${k}> `)
+        .join(",");
+
+    const modified = await db.oneOrNone(
+        `UPDATE reservations SET ${attrsStr} WHERE id = $<id> RETURNING *;`,
+        { id, ...reservation }
+    );
+
+    return modified;
+}
+
+async function deleteOne(id) {
+    return await db.oneOrNone(
+        "DELETE FROM reservations WHERE id=${id} RETURNING id;",
+        { id }
+    );
+}
+
+async function getOverlappingReservations(start, end, appartId) {
+    return await db.manyOrNone(
+        `SELECT * FROM reservations WHERE  
+    ($<start>::DATE = date_start::DATE OR
+          (date_start::date < $<start>::date AND date_end::date > $<start>::date) OR
+          ($<start>::date < date_start::date AND $<end>::date > date_start::date)
+    ) 
+    ${appartId ? " AND location = $<appartId> " : ""};
+    `,
+        {
+            start: jsDateToPostgres(start),
+            end: jsDateToPostgres(end),
+            appartId,
+        }
+    );
+}
+
+module.exports = {
+    createOne,
+    getOne,
+    getAll,
+    getOverlappingReservations,
+    updateOne,
+    deleteOne,
+};
