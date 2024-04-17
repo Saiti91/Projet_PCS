@@ -8,7 +8,7 @@ const authController = require("./auth/controller");
 const idParamGuard = require("./common/middlewares/id_param_guard_middleware");
 const swaggerUI = require("swagger-ui-express");
 const { specs } = require("./common/swagger_handler");
-const authMiddleware = require("./common/middlewares/auth_middlware");
+const authMiddleware = require("./common/middlewares/auth_middleware");
 
 const app = express();
 const port = 80;
