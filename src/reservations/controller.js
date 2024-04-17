@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const Service = require("./service");
 const NotFoundError = require("../common/http_errors").NotFoundError;
-const authorize = require("../common/middlewares/authorize_middleware");
+const authorize = require("../common/middlewares/auth_middleware");
 
 const controller = Router();
 

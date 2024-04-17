@@ -5,7 +5,7 @@ services:
       - 8081:80
     volumes:
       - ./src:/app/src
-    command: bun --watch /app/src/index.ts
+    command: bun --watch /app/src/index.js
 
   database:
     image: postgres
