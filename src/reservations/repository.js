@@ -1,5 +1,5 @@
-const db = require("../common/db_handler");
-const { jsDateToPostgres } = require("../common/utils");
+import { Reservation, PartialReservation } from "./model";
+import db from "../common/db_handler";
 
 async function createOne(location) {
     const attributesString = Object.keys(location).join(",");
@@ -45,7 +45,9 @@ async function updateOne(id, reservation) {
 async function deleteOne(id) {
     return await db.oneOrNone(
         "DELETE FROM reservations WHERE id=${id} RETURNING id;",
-        { id }
+        {
+            id,
+        }
     );
 }
 
@@ -56,17 +58,17 @@ async function getOverlappingReservations(start, end, appartId) {
           (date_start::date < $<start>::date AND date_end::date > $<start>::date) OR
           ($<start>::date < date_start::date AND $<end>::date > date_start::date)
     ) 
-    ${appartId ? " AND location = $<appartId> " : ""};
+    ${appartId && false ? " AND location = $<appartId> " : ""};
     `,
         {
-            start: jsDateToPostgres(start),
-            end: jsDateToPostgres(end),
+            start: start,
+            end: end,
             appartId,
         }
     );
 }
 
-module.exports = {
+export default {
     createOne,
     getOne,
     getAll,
