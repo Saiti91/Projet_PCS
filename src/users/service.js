@@ -2,13 +2,14 @@ const { createUserSchema, updateUserSchema } = require("./model");
 const Repository = require("./repository");
 const { InvalidArgumentError, UnauthorizedError } = require("../common/service_errors");
 
+// Fonction de création d'utilisateur
 async function createOne(user) {
     const { value, error } = createUserSchema.validate(user);
 
     if (error) {
         throw error;
     }
-
+    //check si l'utiilisateur existe déja
     if (await Repository.getOneBy("email", value.email)) {
         throw new InvalidArgumentError("This email is already taken.");
     }
@@ -18,6 +19,7 @@ async function createOne(user) {
     return { ...newUser, password: "[redacted]" };
 }
 
+// fonction de récupération d'un utilisateur en fonction d'un id
 async function getOne(id, issuer) {
     if (["customer", "owner"].includes(issuer.role) && issuer.id !== id) {
         throw new UnauthorizedError("You can only see your own account.");
@@ -29,11 +31,13 @@ async function getOne(id, issuer) {
     } else return user;
 }
 
+//fonction de récupération de tous les utilisateurs
 async function getAll() {
     const users = await Repository.getAll();
     return users.map((user) => ({ ...user, password: "[redacted]" }));
 }
 
+// fonction de changement d'information sur un utilisateur en fonction de son ID
 async function updateOne(id, user, issuer) {
     if (["customer", "owner"].includes(issuer.role) && issuer.id !== id) {
         throw new UnauthorizedError("You can only update your own account.");
@@ -72,6 +76,7 @@ async function updateOne(id, user, issuer) {
     return newUser;
 }
 
+// Suppression d'un utilisateur
 async function deleteOne(id, issuer) {
     if (["customer", "owner"].includes(issuer.role) && issuer.id !== id) {
         throw new UnauthorizedError("You can only delete your own account.");

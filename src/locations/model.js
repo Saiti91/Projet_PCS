@@ -1,23 +1,27 @@
+// Importation de la bibliothèque Joi pour la validation des schémas
 const Joi = require("joi");
 
+// Schéma pour la création d'un emplacement
 const createLocationSchema = Joi.object({
-    owner: Joi.number().integer().positive().required(),
-    area: Joi.number().integer().positive().required(),
-    address: Joi.string().required(),
-    capacity: Joi.number().integer().positive().required(),
-    price: Joi.number().positive().required(),
-    available: Joi.bool().required(),
+    owner: Joi.number().integer().positive().required(), // ID du propriétaire, doit être un entier positif
+    area: Joi.number().integer().positive().required(), // Superficie de l'emplacement, en m², doit être un entier positif
+    address: Joi.string().required(), // Adresse de l'emplacement, doit être une chaîne de caractères non vide
+    capacity: Joi.number().integer().positive().required(), // Capacité d'accueil de l'emplacement, en nombre de personnes, doit être un entier positif
+    price: Joi.number().positive().required(), // Prix de location de l'emplacement, doit être un nombre positif
+    available: Joi.bool().required(), // Disponibilité de l'emplacement, doit être un booléen
 });
 
+// Schéma pour la mise à jour d'un emplacement existant
 const updateLocationSchema = Joi.object({
-    owner: Joi.number().integer().positive().optional(),
-    area: Joi.number().integer().positive().optional(),
-    address: Joi.string().optional(),
-    capacity: Joi.number().integer().positive().optional(),
-    price: Joi.number().positive().optional(),
-    available: Joi.bool().optional(),
-}).min(1);
+    owner: Joi.number().integer().positive().optional(), // ID du propriétaire, optionnel
+    area: Joi.number().integer().positive().optional(), // Superficie de l'emplacement, optionnelle
+    address: Joi.string().optional(), // Adresse de l'emplacement, optionnelle
+    capacity: Joi.number().integer().positive().optional(), // Capacité d'accueil, optionnelle
+    price: Joi.number().positive().optional(), // Prix de location, optionnel
+    available: Joi.bool().optional(), // Disponibilité, optionnelle
+}).min(1); // Au moins une des propriétés doit être mise à jour
 
+// Exportation des schémas pour utilisation dans d'autres parties du code
 module.exports = {
     createLocationSchema,
     updateLocationSchema,

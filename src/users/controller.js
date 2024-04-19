@@ -5,6 +5,7 @@ const authorize = require("../common/middlewares/authorize_middleware");
 
 const controller = Router();
 
+//Vérifie le role staff et appel la méthode get
 controller.get(
     "/",
     authorize(["staff"]),
@@ -15,6 +16,7 @@ controller.get(
     },
 );
 
+//Vérifie le role et appel la méthode GET en fonction de l'id
 controller.get(
     "/:id",
     authorize(["staff", "customer", "owner"]),
@@ -36,6 +38,7 @@ controller.get(
     },
 );
 
+//Vérifie le role Staff et appel la méthode Create user
 controller.post(
     "/",
     authorize(["staff"]),
@@ -48,6 +51,7 @@ controller.post(
     },
 );
 
+//Vérification du role et suppression en fonction de paramettre (un saff peut delete tout le monde, un user peut se delete lui-même, etc..)
 controller.delete(
     "/:id",
     authorize(["owner", "customer", "staff"]),
@@ -69,6 +73,7 @@ controller.delete(
     },
 );
 
+//Vérification du role et suppression en fonction de paramettre (un saff peut patch tout le monde, un user peut se patch lui-même, etc..)
 controller.patch(
     "/:id",
     authorize(["owner", "customer", "staff"]),
