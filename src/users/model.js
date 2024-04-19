@@ -1,5 +1,7 @@
 const Joi = require("joi");
 
+//Schema qui crée un objet afin de manipuler facilement les schemas récuperer par la requète en fonction
+// de la méthode qu'on souhaite
 const createUserSchema = Joi.object({
     role: Joi.string()
         .valid("admin", "customer", "owner", "staff")
