@@ -34,7 +34,6 @@ app.get("/", (_req, res) => {
 // importation des autres scripts
 app.use("/locations", locationsController);
 app.use("/users", usersController);
-app.use("/services", servicesController);
 app.use("/reservations", reservationsController);
 app.use("/auth", authController);
 
