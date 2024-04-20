@@ -6,8 +6,6 @@ const usersController = require("./users/controller");
 const reservationsController = require("./reservations/controller");
 const authController = require("./auth/controller");
 const idParamGuard = require("./common/middlewares/id_param_guard_middleware");
-//const swaggerUI = require("swagger-ui-express");
-//const { specs } = require("./common/swagger_handler");
 const authMiddleware = require("./common/middlewares/auth_middleware");
 
 const app = express();
@@ -18,6 +16,7 @@ app.use(bodyParser.json());
 
 // Transform le token en un objet utilisable dans le code
 app.use(authMiddleware);
+
 
 // Regex
 app.use("/*/[1-9]+$", idParamGuard);

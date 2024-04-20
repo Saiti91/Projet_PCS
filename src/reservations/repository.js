@@ -1,5 +1,5 @@
 // Importation du gestionnaire de base de données
-import db from "../common/db_handler";
+const db =require   ("../common/db_handler");
 
 // Fonction asynchrone pour créer une nouvelle entrée de réservation dans la base de données
 async function createOne(location) {
@@ -87,7 +87,7 @@ async function getOverlappingReservations(start, end, appartId) {
 }
 
 // Exportation des fonctions pour leur utilisation dans d'autres modules
-export default {
+module.exports = {
     createOne,
     getOne,
     getAll,
