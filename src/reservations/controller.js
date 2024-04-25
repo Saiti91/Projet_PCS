@@ -10,7 +10,7 @@ const controller = Router();
 // Route GET pour récupérer toutes les réservations
 controller.get(
     "/",
-    authorize(["staff", "customer", "owner"]), // Autorisation pour différents rôles
+    authorize(["staff", "customer", "owner","provider"]), // Autorisation pour différents rôles
     (_req, res, next) => {
         Service.getAll()
             .then((data) => res.json(data)) // Envoie des données en réponse si réussi
@@ -21,7 +21,7 @@ controller.get(
 // Route GET pour récupérer une réservation spécifique par ID
 controller.get(
     "/:id",
-    authorize(["staff", "customer", "owner"]),
+    authorize(["staff", "customer", "owner","provider"]),
     (req, res, next) => {
         Service.getOne(Number(req.params.id))
             .then((data) => {
@@ -53,7 +53,7 @@ controller.post("/", (req, res, next) => {
 // Route DELETE pour supprimer une réservation par ID
 controller.delete(
     "/:id",
-    authorize(["staff", "owner", "customer"]),
+    authorize(["staff", "owner", "customer","provider"]),
     (req, res, next) => {
         Service.deleteOne(Number(req.params.id))
             .then((id) => {
@@ -71,7 +71,7 @@ controller.delete(
 // Route PATCH pour mettre à jour une réservation spécifique
 controller.patch(
     "/:id",
-    authorize(["staff", "owner", "customer"]),
+    authorize(["staff", "owner", "customer","provider"]),
     (req, res, next) => {
         Service.updateOne(Number(req.params.id), {
             ...req.body,

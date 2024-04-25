@@ -21,7 +21,7 @@ async function createOne(user) {
 
 // fonction de récupération d'un utilisateur en fonction d'un id
 async function getOne(id, issuer) {
-    if (["customer", "owner"].includes(issuer.role) && issuer.id !== id) {
+    if (["customer", "owner",,"provider"].includes(issuer.role) && issuer.id !== id) {
         throw new UnauthorizedError("You can only see your own account.");
     }
 
@@ -39,11 +39,11 @@ async function getAll() {
 
 // fonction de changement d'information sur un utilisateur en fonction de son ID
 async function updateOne(id, user, issuer) {
-    if (["customer", "owner"].includes(issuer.role) && issuer.id !== id) {
+    if (["customer", "owner","provider"].includes(issuer.role) && issuer.id !== id) {
         throw new UnauthorizedError("You can only update your own account.");
     }
 
-    if (["customer", "owner"].includes(issuer.role) && user.role) {
+    if (["customer", "owner","provider"].includes(issuer.role) && user.role) {
         throw new UnauthorizedError("You cannot change your role.");
     }
 
@@ -78,7 +78,8 @@ async function updateOne(id, user, issuer) {
 
 // Suppression d'un utilisateur
 async function deleteOne(id, issuer) {
-    if (["customer", "owner"].includes(issuer.role) && issuer.id !== id) {
+    
+    if (["customer", "owner","provider"].includes(issuer.role) && issuer.id !== id) {
         throw new UnauthorizedError("You can only delete your own account.");
     }
 
