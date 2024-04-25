@@ -1,8 +1,5 @@
-// Importation des types Express
-// import { Request, Response } from "express";
-
 // Importation de express-jwt pour gérer la validation des JWT et des types de base d'Express
-const { expressjwt: jwt } =  require( "express-jwt");
+const {expressjwt : jwt} = require("express-jwt");
 
 // Exportation par défaut du middleware jwt configuré
 module.exports = jwt({
