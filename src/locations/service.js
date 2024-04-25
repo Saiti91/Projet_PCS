@@ -24,7 +24,7 @@ async function createOne(location) {
 
     // Mise à jour du rôle de l'utilisateur si nécessaire
     if (owner.role === "customer") {
-        UserRepository.updateOne(location.owner, { role: "owner" });
+        await UserRepository.updateOne(location.owner, {role: "owner"});
     }
 
     // Création de l'emplacement dans la base de données et retour du résultat
