@@ -28,7 +28,7 @@ controller.get(
             .then((data) => {
                 if (data === null) {
                     throw new NotFoundError(
-                        `Could not find user with id ${req.params.id}`
+                        `Could not find service with id ${req.params.id}`
                     );
                 }
 
@@ -63,7 +63,7 @@ controller.delete(
             .then((id) => {
                 if (id === null) {
                     throw new NotFoundError(
-                        `Could not find user with id ${req.params.id}`
+                        `Could not find service with id ${req.params.id}`
                     );
                 }
 
@@ -85,7 +85,7 @@ controller.patch(
             .then((data) => {
                 if (data === null) {
                     throw new NotFoundError(
-                        `Could not find user with id ${req.params.id}`
+                        `Could not find service with id ${req.params.id}`
                     );
                 }
                 res.status(200).json(data);

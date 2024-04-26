@@ -4,6 +4,7 @@ const Joi = require("joi");
 // de la méthode qu'on souhaite
 const createServicesSchema = Joi.object({
     name: Joi.string().required(), // Type de bien
+    // nom du service à l'intérieur de la catégorie
     price: Joi.number().positive().required(), // Prix du service (par utilisation, doit être un nombre positif
     provider: Joi.string().required(),
     available: Joi.bool().required(), // Disponibilité du service, doit être un booléen
