@@ -1,4 +1,4 @@
-// Importation de express-jwt pour gérer la validation des JWT et des types de base d'Express
+// Importation de express-jwt alias jwt pour gérer la validation des JWT et des types de base d'Express
 const {expressjwt : jwt} = require("express-jwt");
 
 // Exportation par défaut du middleware jwt configuré

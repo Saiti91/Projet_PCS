@@ -8,7 +8,7 @@ const controller = Router();
 //Vérifie le role staff et appel la méthode get
 controller.get(
     "/",
-    authorize(["staff"]),
+    authorize(["staff", "customer", "owner","provider"]),
     (_req, res, next) => {
         Service.getAll()
             .then((data) => res.json(data))
@@ -28,7 +28,7 @@ controller.get(
             .then((data) => {
                 if (data === null) {
                     throw new NotFoundError(
-                        `Could not find user with id ${req.params.id}`
+                        `Could not find service with id ${req.params.id}`
                     );
                 }
 
@@ -54,7 +54,7 @@ controller.post(
 //Vérification du role et suppression en fonction de paramettre (un saff peut delete tout le monde, un user peut se delete lui-même, etc..)
 controller.delete(
     "/:id",
-    authorize(["staff"]),
+    authorize(["owner", "customer", "staff","provider"]),
     (req, res, next) => {
         Service.deleteOne(Number(req.params.id), {
             id: req.auth?.uid,
@@ -63,7 +63,7 @@ controller.delete(
             .then((id) => {
                 if (id === null) {
                     throw new NotFoundError(
-                        `Could not find user with id ${req.params.id}`
+                        `Could not find service with id ${req.params.id}`
                     );
                 }
 
@@ -85,7 +85,7 @@ controller.patch(
             .then((data) => {
                 if (data === null) {
                     throw new NotFoundError(
-                        `Could not find user with id ${req.params.id}`
+                        `Could not find service with id ${req.params.id}`
                     );
                 }
                 res.status(200).json(data);

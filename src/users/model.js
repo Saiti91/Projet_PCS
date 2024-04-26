@@ -4,7 +4,7 @@ const Joi = require("joi");
 // de la méthode qu'on souhaite
 const createUserSchema = Joi.object({
     role: Joi.string()
-        .valid("admin", "customer", "owner", "staff")
+        .valid("admin", "customer", "owner", "staff","provider")
         .default("customer"),
     email: Joi.string().email().required(),
     password: Joi.string().required(),
@@ -13,7 +13,7 @@ const createUserSchema = Joi.object({
 });
 
 const updateUserSchema = Joi.object({
-    role: Joi.string().valid("admin", "customer", "owner", "staff").optional(),
+    role: Joi.string().valid("admin", "customer", "owner", "staff","provider").optional(),
     email: Joi.string().email().optional(),
     password: Joi.string().optional(),
     first_name: Joi.string().optional(),
