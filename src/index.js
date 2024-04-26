@@ -1,4 +1,5 @@
 const express = require("express");
+const dotEnv = require("dotenv")
 const bodyParser = require("body-parser");
 const errorHandlingMiddleware = require("./common/middlewares/error_middleware");
 const locationsController = require("./locations/controller");

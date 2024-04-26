@@ -21,7 +21,7 @@ async function createOne(user) {
 
 // fonction de récupération d'un utilisateur en fonction d'un id
 async function getOne(id, issuer) {
-    if (["customer", "owner",,"provider"].includes(issuer.role) && issuer.id !== id) {
+    if (["customer", "owner","provider"].includes(issuer.role) && issuer.id !== id) {
         throw new UnauthorizedError("You can only see your own account.");
     }
 
