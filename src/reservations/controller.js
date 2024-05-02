@@ -1,6 +1,6 @@
 // Importation des modules nécessaires
 const { Router } = require("express");
-const Service = require("./service"); // Service pour les opérations de réservation
+const reservationService = require("./service"); // Service pour les opérations de réservation
 const NotFoundError = require("../common/http_errors").NotFoundError; // Gestion d'erreurs pour une ressource introuvable
 const authorize = require("../common/middlewares/authorize_middleware"); // Middleware pour l'autorisation
 
@@ -12,7 +12,7 @@ controller.get(
     "/",
     authorize(["staff", "customer", "owner","provider"]), // Autorisation pour différents rôles
     (_req, res, next) => {
-        Service.getAll()
+        reservationService.getAll()
             .then((data) => res.json(data)) // Envoie des données en réponse si réussi
             .catch((err) => next(err)); // Passe à la gestion d'erreurs en cas d'échec
     },
@@ -23,7 +23,7 @@ controller.get(
     "/:id",
     authorize(["staff", "customer", "owner","provider"]),
     (req, res, next) => {
-        Service.getOne(Number(req.params.id))
+        reservationService.getOne(Number(req.params.id))
             .then((data) => {
                 if (data === null) {
                     throw new NotFoundError(
@@ -38,7 +38,7 @@ controller.get(
 
 // Route POST pour créer une nouvelle réservation
 controller.post("/", (req, res, next) => {
-    Service.createOne({
+    reservationService.createOne({
         ...req.body, // Prend les données de la requête
         customer: req.auth?.uid, // Associe la réservation à l'utilisateur authentifié
         date_start: new Date(req.body.date_start),
@@ -55,7 +55,7 @@ controller.delete(
     "/:id",
     authorize(["staff", "owner", "customer","provider"]),
     (req, res, next) => {
-        Service.deleteOne(Number(req.params.id))
+        reservationService.deleteOne(Number(req.params.id))
             .then((id) => {
                 if (id === null) {
                     throw new NotFoundError(
@@ -73,7 +73,7 @@ controller.patch(
     "/:id",
     authorize(["staff", "owner", "customer","provider"]),
     (req, res, next) => {
-        Service.updateOne(Number(req.params.id), {
+        reservationService.updateOne(Number(req.params.id), {
             ...req.body,
             date_start: new Date(req.body.date_start),
             date_end: new Date(req.body.date_end),

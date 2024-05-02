@@ -5,6 +5,7 @@ const errorHandlingMiddleware = require("./common/middlewares/error_middleware")
 const locationsController = require("./locations/controller");
 const usersController = require("./users/controller");
 const reservationsController = require("./reservations/controller");
+const servicesController = require("./reservations/controller");
 const authController = require("./auth/controller");
 const idParamGuard = require("./common/middlewares/id_param_guard_middleware");
 const authMiddleware = require("./common/middlewares/auth_middleware");
