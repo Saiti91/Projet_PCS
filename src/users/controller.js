@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const Service = require("./service");
+const userService = require("./service");
 const NotFoundError = require("../common/http_errors").NotFoundError;
 const authorize = require("../common/middlewares/authorize_middleware");
 
@@ -10,7 +10,7 @@ controller.get(
     "/",
     authorize(["staff"]),
     (_req, res, next) => {
-        Service.getAll()
+        userService.getAll()
             .then((data) => res.json(data))
             .catch((err) => next(err));
     },
@@ -21,7 +21,7 @@ controller.get(
     "/:id",
     authorize(["staff", "customer", "owner","provider"]),
     (req, res, next) => {
-        Service.getOne(Number(req.params.id), {
+        userService.getOne(Number(req.params.id), {
             id: req.auth?.uid,
             role: req.auth?.urole,
         })
@@ -43,7 +43,7 @@ controller.post(
     "/",
     authorize(["staff"]),
     (req, res, next) => {
-        Service.createOne(req.body)
+        userService.createOne(req.body)
             .then((data) => {
                 res.status(201).json(data);
             })
@@ -56,7 +56,7 @@ controller.delete(
     "/:id",
     authorize(["staff"]),
     (req, res, next) => {
-        Service.deleteOne(Number(req.params.id), {
+        userService.deleteOne(Number(req.params.id), {
             id: req.auth?.uid,
             role: req.auth?.urole,
         })
@@ -78,7 +78,7 @@ controller.patch(
     "/:id",
     authorize(["owner", "customer", "staff","provider"]),
     (req, res, next) => {
-        Service.updateOne(Number(req.params.id), req.body, {
+        userService.updateOne(Number(req.params.id), req.body, {
             id: req.auth?.uid,
             role: req.auth?.urole,
         })
