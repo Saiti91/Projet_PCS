@@ -1,6 +1,13 @@
 # Demander l'exécution en tant qu'administrateur
 Start-Process PowerShell -ArgumentList "Set-ExecutionPolicy RemoteSigned -Scope CurrentUser" -Verb RunAs
 
+#Installation de docker
+$dockerInstalled = Get-Command docker -ErrorAction SilentlyContinue
+if (-not $dockerInstalled) {
+    Write-Host "Docker Desktop n'est pas installé. Installation de Docker Desktop..."
+    
+}
+
 # Télécharger l'image Docker pour PostgreSQL
 Write-Host "Téléchargement de l'image Docker pour PostgreSQL..."
 docker pull postgres:latest
@@ -14,7 +21,7 @@ $nodeInstalled = Get-Command node -ErrorAction SilentlyContinue
 if (-not $nodeInstalled) {
     Write-Host "Node.js n'est pas installé. Installation de Node.js..."
     Set-ExecutionPolicy Bypass -Scope Process -Force
-    iwr -useb get.scoop.sh | iex
+    Invoke-WebRequest -useb get.scoop.sh | Invoke-Expression
     scoop install nodejs
 }
 
