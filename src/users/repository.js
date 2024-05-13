@@ -23,7 +23,7 @@ async function getOne(id) {
 //Récupère un ou plusieurs utilisateur en fonction d'un attribut
 async function getOneBy(attribute, value) {
     return await db.oneOrNone(
-        `SELECT * FROM users WHERE ${attribute} = $<value>`,
+        `SELECT * FROM users WHERE ${attribute} = ${value}`,
         { value }
     );
 }
@@ -41,7 +41,7 @@ async function updateOne(id, user) {
         .join(",");
 
     const modified = await db.oneOrNone(
-        `UPDATE users SET ${attrsStr} WHERE id = $<id> RETURNING *;`,
+        `UPDATE users SET ${attrsStr} WHERE id = ${id} RETURNING *;`,
         { id, ...user }
     );
 

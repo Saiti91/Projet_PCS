@@ -31,6 +31,15 @@ async function getOne(id, issuer) {
     } else return service;
 }
 
+async function getOneBy(attribute, value) {
+    const service = await Repository.getOneBy("name", value.name);
+    if (service) {
+        return { ...service/*, password: "[redacted]"*/ };
+    } else return service;
+}
+
+
+
 //fonction de récupération de tous les utilisateurs
 async function getAll() {
     const services = await Repository.getAll();

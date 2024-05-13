@@ -27,29 +27,48 @@ INSERT INTO users(
 ('customer', 'customer@user.com', 'password', 'Jim', 'Beam'),
 ('provider', 'provider@user.com', 'password', 'Jack', 'Daniels');
 
-DROP TABLE IF EXISTS locations;
-CREATE TABLE locations (
+DROP TABLE IF EXISTS appartements;
+CREATE TABLE appartements (
     id serial PRIMARY KEY,
     created_at timestamp DEFAULT NOW(),
     owner serial REFERENCES users(id) ON DELETE CASCADE,
     
-    area int,
+    surface int,
     address text,
     capacity int,
-    price money,
+    price int,
     available boolean
 );
+
+INSERT INTO appartements(
+    owner,
+    surface,
+    address,
+    capacity,
+    price,
+    available
+) VALUES
+      (3,30, 'Paris 04, 6 avenue de la boustifaille', 3, 60,true);
+
 DROP TABLE IF EXISTS reservations;
 CREATE TABLE reservations (
     id serial PRIMARY KEY,
     created_at timestamp DEFAULT NOW(),
-    location serial REFERENCES locations(id) ON DELETE CASCADE,
+    location serial REFERENCES appartements(id) ON DELETE CASCADE,
     customer serial REFERENCES users(id) ON DELETE CASCADE,
     date_start date, 
     date_end date,
-    price money
+    price int
 
 );
+INSERT Into reservations(
+    location,
+    customer,
+    date_start,
+    date_end,
+    price
+) VALUES
+(1,4,'2024-06-01','2024-06-02',60);
 
 DROP TABLE IF EXISTS services;
 CREATE TABLE services (
@@ -61,6 +80,15 @@ CREATE TABLE services (
     provider serial REFERENCES users(id) ON DELETE CASCADE,
     price FLOAT
 );
+INSERT INTO services(
+    name,
+    type,
+    providerAddress,
+    range,
+    provider,
+    price
+) VALUES
+('Ménage', 'menage', 'Paris 07, 11 rue Erard', 10, 5, 20);
 
 DROP TABLE IF EXISTS commentary;
 
