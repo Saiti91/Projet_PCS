@@ -47,9 +47,9 @@ async function updateOne(id, service, issuer) {
         throw new UnauthorizedError("You cannot update services.");
     }
 
-    if (issuer.role === "staff" && service.role === "admin") {
-        throw new UnauthorizedError("Only admins can create admins.");
-    }
+    // if (issuer.role === "staff" && service.role === "admin") {
+    //     throw new UnauthorizedError("Only admins can create admins.");
+    // }
 
     const { value, error } = updateServicesSchema.validate(service);
     if (error) {
@@ -69,7 +69,7 @@ async function updateOne(id, service, issuer) {
 async function deleteOne(id, issuer) {
 
     if (["customer", "owner","provider"].includes(issuer.role)) {
-        throw new UnauthorizedError("You can only delete a service.");
+        throw new UnauthorizedError("You cannot delete a service.");
     }
 
     return await Repository.deleteOne(id);
