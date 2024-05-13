@@ -1,8 +1,6 @@
 # Demander l'exécution en tant qu'administrateur
 Start-Process PowerShell -ArgumentList "Set-ExecutionPolicy RemoteSigned -Scope CurrentUser" -Verb RunAs
 
-#Installation de docker
-
 # Télécharger l'image Docker pour PostgreSQL
 Write-Host "Téléchargement de l'image Docker pour PostgreSQL..."
 docker pull postgres:latest
