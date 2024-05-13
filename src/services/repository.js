@@ -28,6 +28,7 @@ async function getOneBy(attribute, value) {
     );
 }
 
+
 //Récupère tous les services
 async function getAll() {
     const res = await db.manyOrNone("SELECT * FROM services");

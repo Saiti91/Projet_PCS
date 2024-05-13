@@ -38,6 +38,27 @@ controller.get(
     },
 );
 
+controller.get(
+    "/:locationid",
+    authorize(["staff", "customer", "owner","provider"]),
+    (req, res, next) => {
+        Service.getOne(Number(req.params.id), {
+            id: req.auth?.uid,
+            role: req.auth?.urole,
+        })
+            .then((data) => {
+                if (data === null) {
+                    throw new NotFoundError(
+                        `Could not find service with id ${req.params.id}`
+                    );
+                }
+
+                res.json(data);
+            })
+            .catch((err) => next(err));
+    },
+);
+
 //Vérifie le role Staff et appel la méthode Create user
 controller.post(
     "/",
