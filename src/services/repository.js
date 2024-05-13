@@ -10,27 +10,27 @@ async function createOne(service) {
         .join(",");
 
     return await db.one(
-        `INSERT INTO users(${attributesString}) VALUES(${valuesString}) RETURNING *;`,
+        `INSERT INTO services(${attributesString}) VALUES(${valuesString}) RETURNING *;`,
         service
     );
 }
 
-//Récupère un utilisateur en fonction de son ID
+//Récupère un service en fonction de son ID
 async function getOne(id) {
-    return await db.oneOrNone("SELECT * FROM users WHERE id=${id}", { id });
+    return await db.oneOrNone("SELECT * FROM services WHERE id=${id}", { id });
 }
 
-//Récupère un ou plusieurs utilisateur en fonction d'un attribut
+//Récupère un ou plusieurs services en fonction d'un attribut
 async function getOneBy(attribute, value) {
     return await db.oneOrNone(
-        `SELECT * FROM users WHERE ${attribute} = $<value>`,
+        `SELECT * FROM services WHERE ${attribute} = $<value>`,
         { value }
     );
 }
 
-//Récupère tous les utilisateurs
+//Récupère tous les services
 async function getAll() {
-    const res = await db.manyOrNone("SELECT * FROM users");
+    const res = await db.manyOrNone("SELECT * FROM services");
     return res || [];
 }
 
@@ -41,7 +41,7 @@ async function updateOne(id, user) {
         .join(",");
 
     const modified = await db.oneOrNone(
-        `UPDATE users SET ${attrsStr} WHERE id = $<id> RETURNING *;`,
+        `UPDATE services SET ${attrsStr} WHERE id = $<id> RETURNING *;`,
         { id, ...user }
     );
 
@@ -50,7 +50,7 @@ async function updateOne(id, user) {
 
 //Délete un user par son ID
 async function deleteOne(id) {
-    return await db.oneOrNone("DELETE FROM users WHERE id=${id} RETURNING id;", { id });
+    return await db.oneOrNone("DELETE FROM services WHERE id=${id} RETURNING id;", { id });
 }
 
 module.exports = { createOne, getOne, getAll, updateOne, deleteOne, getOneBy };

@@ -2,11 +2,6 @@
 Start-Process PowerShell -ArgumentList "Set-ExecutionPolicy RemoteSigned -Scope CurrentUser" -Verb RunAs
 
 #Installation de docker
-$dockerInstalled = Get-Command docker -ErrorAction SilentlyContinue
-if (-not $dockerInstalled) {
-    Write-Host "Docker Desktop n'est pas installé. Installation de Docker Desktop..."
-    
-}
 
 # Télécharger l'image Docker pour PostgreSQL
 Write-Host "Téléchargement de l'image Docker pour PostgreSQL..."
