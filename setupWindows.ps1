@@ -7,7 +7,7 @@ docker pull postgres:latest
 
 # Lancer le Docker de la base de données PostgreSQL avec le script SQL
 Write-Host "Démarrage du conteneur Docker pour PostgreSQL..."
-docker run --name PCS_postgres -e POSTGRES_PASSWORD=password -d -v ${PWD}\database:/docker-entrypoint-initdb.d postgres:latest
+docker run --name PCS_postgres -e POSTGRES_PASSWORD=password -d -v ${PWD}/database:/docker-entrypoint-initdb.d -p 5432:5432 postgres:latest
 
 # Vérifier si Node.js est installé et l'installer si ce n'est pas le cas
 $nodeInstalled = Get-Command node -ErrorAction SilentlyContinue
@@ -21,6 +21,7 @@ if (-not $nodeInstalled) {
 # Installer les dépendances du projet
 Write-Host "Installation des dépendances du projet..."
 npm install
+npm install axios
 npm install body-parser
 npm install express
 npm install express-jwt

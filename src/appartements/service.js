@@ -3,21 +3,18 @@ const { createLocationSchema, updateLocationSchema } = require("./model");
 const Repository = require("./repository");
 const UserRepository = require("../users/repository");
 const { InvalidArgumentError } = require("../common/service_errors");
+const { getGeoCoordinates } = require("../common/middlewares/gps_middleware");
+const axios = require('axios');
 
-// Fonction asynchrone pour créer un nouvel emplacement
 async function createOne(location) {
     // Validation de l'emplacement avec le schéma défini
     const { value, error } = createLocationSchema.validate(location);
-
-    // Lancer une erreur si la validation échoue
     if (error) {
         throw error;
     }
 
     // Récupération de l'utilisateur propriétaire pour vérifier son existence
     const owner = await UserRepository.getOne(location.owner);
-
-    // Lancer une erreur si le propriétaire n'existe pas
     if (!owner) {
         throw new InvalidArgumentError("Provided owner does not have an account!");
     }
@@ -27,9 +24,21 @@ async function createOne(location) {
         await UserRepository.updateOne(location.owner, {role: "owner"});
     }
 
+    // Obtention des coordonnées géographiques
+    try {
+        const coordinates = await getGeoCoordinates(location.address);
+        value.latitude = coordinates.latitude;
+        value.longitude = coordinates.longitude;
+    } catch (error) {
+        console.error("Error obtaining coordinates:", error);
+        throw error;
+    }
+
     // Création de l'emplacement dans la base de données et retour du résultat
     return await Repository.createOne(value);
 }
+
+
 
 // Fonction asynchrone pour récupérer un emplacement par son identifiant
 async function getOne(id) {

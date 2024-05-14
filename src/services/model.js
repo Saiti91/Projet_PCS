@@ -7,9 +7,7 @@ const createServicesSchema = Joi.object({
     type: Joi.string().required(),
     price: Joi.number().positive().required(), // Prix du service (par utilisation, doit être un nombre positif
     provider: Joi.string().required(),
-    available: Joi.bool().required(), // Disponibilité du service, doit être un booléen
     address: Joi.string().required(),
-    range: Joi.number().required(),
 
 });
 
@@ -18,9 +16,7 @@ const updateServicesSchema = Joi.object({
     name: Joi.string().optional(), // Type de bien
     price: Joi.number().positive().optional(), // Prix du service (par utilisation, doit être un nombre positif
     provider: Joi.string().optional(),
-    available: Joi.bool().optional(), // Disponibilité du service, doit être un booléen
     address: Joi.string().optional(),
-    range: Joi.number().optional(),
 }).min(1); // Au moins une des propriétés doit être mise à jour
 
 // Exportation des schémas pour utilisation dans d'autres parties du code

@@ -1,5 +1,6 @@
 const { Router } = require("express");
 const Service = require("./service");
+const getAppartement = require("../appartements/repository");
 const NotFoundError = require("../common/http_errors").NotFoundError;
 const authorize = require("../common/middlewares/authorize_middleware");
 
@@ -39,24 +40,26 @@ controller.get(
 );
 
 controller.get(
-    "/:locationid",
-    authorize(["staff", "customer", "owner","provider"]),
-    (req, res, next) => {
-        Service.getOne(Number(req.params.id), {
-            id: req.auth?.uid,
-            role: req.auth?.urole,
-        })
-            .then((data) => {
-                if (data === null) {
-                    throw new NotFoundError(
-                        `Could not find service with id ${req.params.id}`
-                    );
-                }
+    "/appartements/:appartementId/services",
+    authorize(["staff", "customer", "owner", "provider"]),
+    async (req, res, next) => {
+        try {
+            const appartementId = Number(req.params.appartementId);
+            const appartement = await Service.getAppartementById(appartementId);
+            if (!appartement) {
+                return next(new NotFoundError(`Could not find apartment with id ${appartementId}`));
+            }
 
-                res.json(data);
-            })
-            .catch((err) => next(err));
-    },
+            const maxDistance = Number(process.env.PROVIDER_RANGE_KM || 10); // Default to 10 km if not set
+            const { latitude, longitude } = appartement;
+
+            const services = await Service.getServicesWithinRadius(latitude, longitude, maxDistance);
+            res.json(services);
+        } catch (err) {
+            console.error("Failed to retrieve services:", err);
+            next(new InternalServerError("An error occurred while retrieving services"));
+        }
+    }
 );
 
 //Vérifie le role Staff et appel la méthode Create user

@@ -20,7 +20,7 @@ async function createOne(location) {
 // Fonction asynchrone pour récupérer une réservation par son identifiant
 async function getOne(id) {
     // Exécution de la requête SQL pour sélectionner une réservation par son id
-    return await db.oneOrNone("SELECT * FROM reservations WHERE id=${id}", {
+    return await db.oneOrNone("SELECT * FROM reservations WHERE reservations_id=${id}", {
         id,
     });
 }
@@ -48,7 +48,7 @@ async function updateOne(id, reservation) {
 
     // Exécution de la requête SQL pour mettre à jour la réservation et retourner l'entrée modifiée
     const modified = await db.oneOrNone(
-        `UPDATE reservations SET ${attrsStr} WHERE id = $<id> RETURNING *;`,
+        `UPDATE reservations SET ${attrsStr} WHERE reservations_id = ${id} RETURNING *;`,
         { id, ...reservation }
     );
 
@@ -60,7 +60,7 @@ async function updateOne(id, reservation) {
 async function deleteOne(id) {
     // Exécution de la requête SQL pour supprimer la réservation et retourner l'identifiant supprimé
     return await db.oneOrNone(
-        "DELETE FROM reservations WHERE id=${id} RETURNING id;",
+        "DELETE FROM reservations WHERE reservations_id=${id} RETURNING reservations_id;",
         {
             id,
         }
@@ -69,21 +69,40 @@ async function deleteOne(id) {
 
 // Fonction asynchrone pour récupérer des réservations qui se chevauchent avec un intervalle donné
 async function getOverlappingReservations(start, end, appartId) {
-    // Exécution de la requête SQL pour sélectionner les réservations qui se chevauchent avec les dates données
-    return await db.manyOrNone(
-        `SELECT * FROM reservations WHERE  
-    ($<start>::DATE = date_start::DATE OR
-          (date_start::date < $<start>::date AND date_end::date > $<start>::date) OR
-          ($<start>::date < date_start::date AND $<end>::date > date_start::date)
-    ) 
-    ${appartId && false ? " AND location = $<appartId> " : ""};
-    `,
-        {
-            start: start,
-            end: end,
-            appartId,
-        }
-    );
+    // Defining the SQL query
+    const query = `
+        SELECT * FROM reservations 
+        WHERE (
+            ($1::DATE = date_start::DATE OR
+            date_start::DATE < $1::DATE AND date_end::DATE > $1::DATE OR
+            $1::DATE < date_start::DATE AND $2::DATE > date_start::DATE)
+        )
+        ${appartId ? " AND location = $3" : ""};
+    `;
+
+    try {
+        // Executing the SQL query with parameters
+        return await db.manyOrNone(query, appartId ? [start, end, appartId] : [start, end]);
+    } catch (error) {
+        console.error("Error fetching overlapping reservations:", error);
+        throw error;
+    }
+}
+
+async function checkAvailability(start, end, appartId) {
+    const query = `
+        SELECT COUNT(*) FROM generate_series($1::date, $2::date, '1 day') AS g(day)
+        LEFT JOIN appartementAvailabilities a ON a.date = g.day AND a.appartement_id = $3
+        WHERE a.available IS NOT TRUE OR a.available IS NULL;
+    `;
+
+    try {
+        const result = await db.one(query, [start, end, appartId]);
+        return parseInt(result.count) === 0; // Retourne vrai si tous les jours sont disponibles
+    } catch (error) {
+        console.error("Error checking availability:", error);
+        throw error;
+    }
 }
 
 // Exportation des fonctions pour leur utilisation dans d'autres modules
@@ -94,4 +113,5 @@ module.exports = {
     getOverlappingReservations,
     updateOne,
     deleteOne,
+    checkAvailability,
 };
