@@ -1,53 +1,33 @@
 // Importation des schémas
 const { createReservationSchema, updateReservationSchema } = require("./model");
 const Repository = require("./repository");
-const locationService = require("../locations/service");
+const locationService = require("../appartements/service");
 const { InvalidArgumentError } = require("../common/service_errors");
 
-// Fonction asynchrone pour créer une nouvelle réservation
 async function createOne(reservation) {
-    // Validation de la réservation avec le schéma approprié
     const { value, error } = createReservationSchema.validate(reservation);
-
-    // Lève une exception si une erreur de validation est trouvée
     if (error) {
         throw error;
     }
 
-    // Récupération du lieu de la réservation pour vérifier son existence
     const location = await locationService.getOne(reservation.location);
-
-    // Lève une exception si le lieu spécifié n'existe pas
     if (!location) {
-        throw new InvalidArgumentError(
-            "The location you're looking to reserve does not exist."
-        );
+        throw new InvalidArgumentError("The location you're looking to reserve does not exist.");
     }
 
-    // Lève une exception si le lieu n'est pas disponible pour la réservation
-    if (!value.location) {
-        throw new InvalidArgumentError(
-            "The location you're looking to reserve is not available for now."
-        );
+    const isAvailable = await Repository.checkAvailability(value.date_start, value.date_end, value.location);
+    if (!isAvailable) {
+        throw new InvalidArgumentError("Some or all of the dates are not available. Please choose different dates.");
     }
 
-    // Vérifie s'il existe des réservations qui se chevauchent avec les dates demandées
-    const overlapping = await Repository.getOverlappingReservations(
-        value.date_start,
-        value.date_end,
-        value.location
-    );
-
-    // Lève une exception si un chevauchement est détecté
+    const overlapping = await Repository.getOverlappingReservations(value.date_start, value.date_end, value.location);
     if (overlapping.length) {
-        throw new InvalidArgumentError(
-            "This interval is not available. Please try another."
-        );
+        throw new InvalidArgumentError("This interval is not available due to existing reservations. Please try another interval.");
     }
 
-    // Crée la réservation dans le dépôt et retourne le résultat
     return await Repository.createOne(value);
 }
+
 
 // Fonction asynchrone pour récupérer une réservation par son identifiant
 async function getOne(id) {

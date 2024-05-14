@@ -2,7 +2,7 @@ const express = require("express");
 const dotEnv = require("dotenv")
 const bodyParser = require("body-parser");
 const errorHandlingMiddleware = require("./common/middlewares/error_middleware");
-const locationsController = require("./locations/controller");
+const locationsController = require("./appartements/controller");
 const usersController = require("./users/controller");
 const reservationsController = require("./reservations/controller");
 const servicesController = require("./reservations/controller");
@@ -27,12 +27,12 @@ app.use("/*/[1-9]+$", idParamGuard);
 app.get("/", (_req, res) => {
     res.json({
         message: "Welcome to PCS API!",
-        routes: ["/users", "/auth", "/locations", "/reservations", "/doc","/services"],
+        routes: ["/users", "/auth", "/appartements", "/reservations", "/doc","/services"],
     });
 });
 
 // importation des autres scripts
-app.use("/locations", locationsController);
+app.use("/appartements", locationsController);
 app.use("/users", usersController);
 app.use("/reservations", reservationsController);
 app.use("/auth", authController);

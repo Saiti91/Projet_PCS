@@ -4,7 +4,7 @@ CREATE EXTENSION citext;
 
 DROP TABLE IF EXISTS users;
 CREATE TABLE users (
-    id serial PRIMARY KEY,
+    users_id serial PRIMARY KEY,
     created_at timestamp DEFAULT NOW(),
     
     role role,
@@ -29,10 +29,11 @@ INSERT INTO users(
 
 DROP TABLE IF EXISTS appartements;
 CREATE TABLE appartements (
-    id serial PRIMARY KEY,
+    appartements_id serial PRIMARY KEY,
     created_at timestamp DEFAULT NOW(),
-    owner serial REFERENCES users(id) ON DELETE CASCADE,
-    
+    owner_id serial REFERENCES users(users_id) ON DELETE CASCADE,
+    longitude float8,
+    latitude float8,
     surface int,
     address text,
     capacity int,
@@ -41,21 +42,23 @@ CREATE TABLE appartements (
 );
 
 INSERT INTO appartements(
-    owner,
+    owner_id,
     surface,
     address,
+    longitude,
+    latitude,
     capacity,
     price,
     available
 ) VALUES
-      (3,30, 'Paris 04, 6 avenue de la boustifaille', 3, 60,true);
+      (3, 30, 'Paris 04, 6 avenue de la boustifaille', 10, 10, 3, 60,true);
 
 DROP TABLE IF EXISTS reservations;
 CREATE TABLE reservations (
-    id serial PRIMARY KEY,
+    reservations_id serial PRIMARY KEY,
     created_at timestamp DEFAULT NOW(),
-    location serial REFERENCES appartements(id) ON DELETE CASCADE,
-    customer serial REFERENCES users(id) ON DELETE CASCADE,
+    location serial REFERENCES appartements(appartements_id) ON DELETE CASCADE,
+    customer serial REFERENCES users(users_id) ON DELETE CASCADE,
     date_start date, 
     date_end date,
     price int
@@ -72,31 +75,52 @@ INSERT Into reservations(
 
 DROP TABLE IF EXISTS services;
 CREATE TABLE services (
-    id serial PRIMARY KEY,
+    services_id serial PRIMARY KEY,
     name text,
     type serviceType,
     providerAddress text,
-    range FLOAT,
-    provider serial REFERENCES users(id) ON DELETE CASCADE,
+    providerLongitude float8,
+    providerLatitude float8,
+    maxOperatingRadius INT,
+    provider serial REFERENCES users(users_id) ON DELETE CASCADE,
     price FLOAT
 );
 INSERT INTO services(
     name,
     type,
     providerAddress,
-    range,
+    providerLongitude,
+    providerLatitude,
     provider,
     price
 ) VALUES
-('Ménage', 'menage', 'Paris 07, 11 rue Erard', 10, 5, 20);
+('Ménage', 'menage', 'Paris 07, 11 rue Erard', 10, 10, 5, 20);
 
 DROP TABLE IF EXISTS commentary;
 
 -- Crée à nouveau la table avec la définition correcte
 CREATE TABLE commentary (
-    id serial PRIMARY KEY,
+    commentary_id serial PRIMARY KEY,
     text text,
     rating int,
-    customer serial REFERENCES users(id) ON DELETE CASCADE,
-    service serial REFERENCES services(id) ON DELETE CASCADE
+    customer serial REFERENCES users(users_id) ON DELETE CASCADE,
+    service serial REFERENCES services(services_id) ON DELETE CASCADE
+);
+
+CREATE TABLE providerAvailabilities (
+    providerAvailabilities_id SERIAL PRIMARY KEY,
+    available BOOLEAN NOT NULL,
+    date date NOT NULL,
+    provider_id INT NOT NULL,
+    FOREIGN KEY (provider_id) REFERENCES users(users_id) ON DELETE CASCADE
+);
+
+CREATE TABLE appartementAvailabilities (
+    appartementAvailabilities_id SERIAL PRIMARY KEY,
+    available BOOLEAN NOT NULL,
+    date date NOT NULL,
+    owner_id INT NOT NULL,
+    appartement_id INT NOT NULL,
+    FOREIGN KEY (owner_id) REFERENCES users(users_id) ON DELETE CASCADE,
+    FOREIGN KEY (appartement_id) REFERENCES appartements(appartements_id) ON DELETE CASCADE
 );

@@ -4,18 +4,27 @@ const { InvalidArgumentError, UnauthorizedError } = require("../common/service_e
 
 // Fonction de création d'utilisateur
 async function createOne(user) {
+    // Validation de l'utilisateur avec un schéma Joi ou similaire
     const { value, error } = createUserSchema.validate(user);
-
     if (error) {
         throw error;
     }
-    //check si l'utiilisateur existe déja
+
+    // Vérification de l'existence de l'email
     if (await Repository.getOneBy("email", value.email)) {
         throw new InvalidArgumentError("This email is already taken.");
     }
 
+    // Création de l'utilisateur dans la base de données
     const newUser = await Repository.createOne(value);
 
+    // Si l'utilisateur créé a le rôle "provider", effectuer des opérations supplémentaires
+    if (newUser.role === 'provider') {
+        // Par exemple, créer un calendrier pour le provider
+        await Repository.createProviderCalendar(newUser.id); // Assurez-vous que cette fonction existe et est implémentée correctement
+    }
+
+    // Renvoi de l'utilisateur nouvellement créé avec le mot de passe masqué
     return { ...newUser, password: "[redacted]" };
 }
 

@@ -2,9 +2,9 @@ const db = require("../common/db_handler");
 
 //création d'un service
 async function createOne(service) {
-    //Sépare les attribut de l'objet
+    //Sépare les attributs de l'objet
     const attributesString = Object.keys(service).join(",");
-    //Crée une string avec cet objet séparer
+    //Crée une string avec cet objet séparé
     const valuesString = Object.keys(service)
         .map((k) => `$<${k}>`)
         .join(",");
@@ -17,17 +17,27 @@ async function createOne(service) {
 
 //Récupère un service en fonction de son ID
 async function getOne(id) {
-    return await db.oneOrNone("SELECT * FROM services WHERE id=${id}", { id });
+    return await db.oneOrNone("SELECT * FROM services WHERE services_id=${id}", { id });
 }
 
 //Récupère un ou plusieurs services en fonction d'un attribut
 async function getOneBy(attribute, value) {
     return await db.oneOrNone(
-        `SELECT * FROM services WHERE ${attribute} = $<value>`,
+        `SELECT * FROM services WHERE ${attribute} = ${value}`,
         { value }
     );
 }
 
+
+async function getAppartementById(id) {
+    try {
+        const result = await db.oneOrNone('SELECT latitude, longitude FROM appartements WHERE appartements_id = $1', [id]);
+        return result;
+    } catch (error) {
+        console.error("Error fetching appartement details:", error);
+        throw error;
+    }
+}
 
 //Récupère tous les services
 async function getAll() {
@@ -42,7 +52,7 @@ async function updateOne(id, user) {
         .join(",");
 
     const modified = await db.oneOrNone(
-        `UPDATE services SET ${attrsStr} WHERE id = $<id> RETURNING *;`,
+        `UPDATE services SET ${attrsStr} WHERE services_id = ${id} RETURNING *;`,
         { id, ...user }
     );
 
@@ -51,7 +61,7 @@ async function updateOne(id, user) {
 
 //Délete un user par son ID
 async function deleteOne(id) {
-    return await db.oneOrNone("DELETE FROM services WHERE id=${id} RETURNING id;", { id });
+    return await db.oneOrNone("DELETE FROM services WHERE services_id=${id} RETURNING services_id;", { id });
 }
 
-module.exports = { createOne, getOne, getAll, updateOne, deleteOne, getOneBy };
+module.exports = { createOne, getOne, getAll,getAppartementById, updateOne, deleteOne, getOneBy };
