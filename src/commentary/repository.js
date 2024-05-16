@@ -1,6 +1,6 @@
 // Importation du gestionnaire de base de données
 const db = require("../common/db_handler");
-const calendar = require("../calendar/repository");
+
 // Fonction asynchrone pour créer un nouvel emplacement
 // async function createOne(appartement) {
 //     // Création d'une chaîne de caractères avec les clés de l'objet appartement
@@ -33,7 +33,7 @@ async function createOne(appartement) {
 
         // Vérification que l'idOwner est fourni et utilisation de l'idAppartement retourné pour appeler createCalendar
         if (newAppartement.owner_id) {
-            await calendar.createCalendar(newAppartement.appartement_id, newAppartement.owner_id);
+            await createCalendar(newAppartement.appartement_id, newAppartement.owner_id);
         }
 
         // Retourner le nouvel appartement après la création du calendrier
@@ -64,6 +64,24 @@ async function createCalendar(idAppartement, idOwner) {
         return { success: false, message: error.message };
     }
 }
+
+async function createProviderCalendar(providerId) {
+    // Requête SQL pour insérer les disponibilités pour le provider
+    const query = `
+        INSERT INTO providerAvailabilities (available, date, provider_id)
+        SELECT true, gs.date, $1 as provider_id
+        FROM generate_series(current_date, current_date + interval '2 years', '1 day') as gs(date)`;
+
+    try {
+        // Exécuter la requête avec l'identifiant du provider
+        await db.none(query, [providerId]);
+        return { success: true, message: "calendar created for provider for two years." };
+    } catch (error) {
+        console.error("Error creating calendar for provider:", error);
+        return { success: false, message: error.message };
+    }
+}
+
 
 // Fonction asynchrone pour récupérer tous les emplacements
 async function getAll() {
@@ -106,4 +124,4 @@ async function deleteOne(id) {
 }
 
 // Exportation des fonctions pour utilisation dans d'autres parties du code
-module.exports = { createOne, getOne, getAll, updateOne, deleteOne, };
+module.exports = { createOne, getOne, getAll, updateOne, deleteOne,createCalendar,createProviderCalendar, };

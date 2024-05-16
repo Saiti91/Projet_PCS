@@ -1,6 +1,8 @@
 const { createUserSchema, updateUserSchema } = require("./model");
 const Repository = require("./repository");
 const { InvalidArgumentError, UnauthorizedError } = require("../common/service_errors");
+const calendar = require("../calendar/repository");
+
 
 // Fonction de création d'utilisateur
 async function createOne(user) {
@@ -21,7 +23,7 @@ async function createOne(user) {
     // Si l'utilisateur créé a le rôle "provider", effectuer des opérations supplémentaires
     if (newUser.role === 'provider') {
         // Par exemple, créer un calendrier pour le provider
-        await Repository.createProviderCalendar(newUser.id); // Assurez-vous que cette fonction existe et est implémentée correctement
+        await calendar.createProviderCalendar(newUser.id); // Assurez-vous que cette fonction existe et est implémentée correctement
     }
 
     // Renvoi de l'utilisateur nouvellement créé avec le mot de passe masqué
