@@ -14,19 +14,6 @@ CREATE TABLE users (
     last_name text
 );
 
-INSERT INTO users(
-    role, 
-    email, 
-    password, 
-    first_name, 
-    last_name
-) VALUES
-('admin', 'test@user.com', 'password', 'Georges', 'Abitbol'),
-('staff', 'staff@user.com', 'password', 'John', 'Doe'),
-('owner', 'owner@user.com', 'password', 'Jane', 'Doe'),
-('customer', 'customer@user.com', 'password', 'Jim', 'Beam'),
-('provider', 'provider@user.com', 'password', 'Jack', 'Daniels');
-
 DROP TABLE IF EXISTS appartements;
 CREATE TABLE appartements (
     appartements_id serial PRIMARY KEY,
@@ -41,18 +28,6 @@ CREATE TABLE appartements (
     available boolean
 );
 
-INSERT INTO appartements(
-    owner_id,
-    surface,
-    address,
-    longitude,
-    latitude,
-    capacity,
-    price,
-    available
-) VALUES
-      (3, 30, 'Paris 04, 6 avenue de la boustifaille', 10, 10, 3, 60,true);
-
 DROP TABLE IF EXISTS reservations;
 CREATE TABLE reservations (
     reservations_id serial PRIMARY KEY,
@@ -64,14 +39,7 @@ CREATE TABLE reservations (
     price int
 
 );
-INSERT Into reservations(
-    location,
-    customer,
-    date_start,
-    date_end,
-    price
-) VALUES
-(1,4,'2024-06-01','2024-06-02',60);
+
 
 DROP TABLE IF EXISTS services;
 CREATE TABLE services (
@@ -85,20 +53,8 @@ CREATE TABLE services (
     provider serial REFERENCES users(users_id) ON DELETE CASCADE,
     price FLOAT
 );
-INSERT INTO services(
-    name,
-    type,
-    providerAddress,
-    providerLongitude,
-    providerLatitude,
-    provider,
-    price
-) VALUES
-('Ménage', 'menage', 'Paris 07, 11 rue Erard', 10, 10, 5, 20);
 
 DROP TABLE IF EXISTS commentary;
-
-
 CREATE TABLE commentary (
     commentary_id serial PRIMARY KEY,
     text text,
@@ -124,3 +80,49 @@ CREATE TABLE appartementAvailabilities (
     FOREIGN KEY (owner_id) REFERENCES users(users_id) ON DELETE CASCADE,
     FOREIGN KEY (appartement_id) REFERENCES appartements(appartements_id) ON DELETE CASCADE
 );
+
+INSERT INTO users(
+    role,
+    email,
+    password,
+    first_name,
+    last_name
+) VALUES
+      ('admin', 'test@user.com', 'password', 'Georges', 'Abitbol'),
+      ('staff', 'staff@user.com', 'password', 'John', 'Doe'),
+      ('owner', 'owner@user.com', 'password', 'Jane', 'Doe'),
+      ('customer', 'customer@user.com', 'password', 'Jim', 'Beam'),
+      ('provider', 'provider@user.com', 'password', 'Jack', 'Daniels');
+
+
+INSERT INTO appartements(
+    owner_id,
+    surface,
+    address,
+    longitude,
+    latitude,
+    capacity,
+    price,
+    available
+) VALUES
+    (3, 30, 'Paris 04, 6 avenue de la boustifaille', 10, 10, 3, 60,true);
+
+INSERT Into reservations(
+    location,
+    customer,
+    date_start,
+    date_end,
+    price
+) VALUES
+    (1,4,'2024-06-01','2024-06-02',60);
+
+INSERT INTO services(
+    name,
+    type,
+    providerAddress,
+    providerLongitude,
+    providerLatitude,
+    provider,
+    price
+) VALUES
+    ('Ménage', 'menage', 'Paris 07, 11 rue Erard', 10, 10, 5, 20);

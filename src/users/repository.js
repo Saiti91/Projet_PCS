@@ -14,22 +14,6 @@ async function createOne(user) {
         user
     );
 }
-async function createProviderCalendar(providerId) {
-    // Requête SQL pour insérer les disponibilités pour le provider
-    const query = `
-        INSERT INTO providerAvailabilities (available, date, provider_id)
-        SELECT true, gs.date, $1 as provider_id
-        FROM generate_series(current_date, current_date + interval '2 years', '1 day') as gs(date)`;
-
-    try {
-        // Exécuter la requête avec l'identifiant du provider
-        await db.none(query, [providerId]);
-        return { success: true, message: "Calendar created for provider for two years." };
-    } catch (error) {
-        console.error("Error creating calendar for provider:", error);
-        return { success: false, message: error.message };
-    }
-}
 
 //Récupère un utilisateur en fonction de son ID
 async function getOne(id) {
@@ -68,4 +52,4 @@ async function deleteOne(id) {
     return await db.oneOrNone("DELETE FROM users WHERE users_id=${id} RETURNING users_id;", { id });
 }
 
-module.exports = { createOne, getOne, getAll, updateOne, deleteOne, getOneBy,createProviderCalendar };
+module.exports = { createOne, getOne, getAll, updateOne, deleteOne, getOneBy, };
