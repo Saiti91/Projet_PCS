@@ -68,7 +68,7 @@ async function getServicesWithinRadius(lat, lon, maxDistance) {
 
 async function getAll() {
     const services = await Repository.getAll();
-    return services.map((service) => ({ ...service, password: "[redacted]" }));
+    return services.map((service) => ({ ...service }));
 }
 
 async function getAppartementById(id) {
