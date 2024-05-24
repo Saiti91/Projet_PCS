@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const Service = require("./service");
+const appartementsServices = require("./service");
 const { Location, PartialLocation } = require("./model");
 const { NotFoundError } = require("../common/http_errors");
 const authorize = require("../common/middlewares/authorize_middleware");
@@ -7,13 +7,13 @@ const authorize = require("../common/middlewares/authorize_middleware");
 const controller = Router();
 
 controller.get("/", (req, res, next) => {
-    Service.getAll()
+    appartementsServices.getAll()
         .then((data) => res.json(data))
         .catch((err) => next(err));
 });
 
 controller.get("/:id", (req, res, next) => {
-    Service.getOne(Number(req.params.id))
+    appartementsServices.getOne(Number(req.params.id))
         .then((data) => {
             if (data === null) {
                 throw new NotFoundError(
@@ -27,7 +27,7 @@ controller.get("/:id", (req, res, next) => {
 });
 
 controller.post("/", authorize(["staff"]), (req, res, next) => {
-    Service.createOne(req.body)
+    appartementsServices.createOne(req.body)
         .then((data) => {
             res.status(201).json(data);
         })
@@ -35,7 +35,7 @@ controller.post("/", authorize(["staff"]), (req, res, next) => {
 });
 
 controller.delete("/:id", authorize(["staff", "owner"]), (req, res, next) => {
-    Service.deleteOne(Number(req.params.id))
+    appartementsServices.deleteOne(Number(req.params.id))
         .then((id) => {
             if (id === null) {
                 throw new NotFoundError(
@@ -49,7 +49,7 @@ controller.delete("/:id", authorize(["staff", "owner"]), (req, res, next) => {
 });
 
 controller.patch("/:id", authorize(["staff", "owner"]), (req, res, next) => {
-    Service.updateOne(Number(req.params.id), req.body)
+    appartementsServices.updateOne(Number(req.params.id), req.body)
         .then((data) => {
             if (data === null) {
                 throw new NotFoundError(

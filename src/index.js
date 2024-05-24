@@ -2,20 +2,26 @@ const express = require("express");
 const dotEnv = require("dotenv")
 const bodyParser = require("body-parser");
 const errorHandlingMiddleware = require("./common/middlewares/error_middleware");
-const locationsController = require("./appartements/controller");
+const appartementsController = require("./appartements/controller");
 const usersController = require("./users/controller");
 const reservationsController = require("./reservations/controller");
 const servicesController = require("./reservations/controller");
 const authController = require("./auth/controller");
 const idParamGuard = require("./common/middlewares/id_param_guard_middleware");
 const authMiddleware = require("./common/middlewares/auth_middleware");
+const cors = require("cors");
 
 const app = express();
 const port = 80;
 
 // Transform le json en un objet utilisable dans le code
 app.use(bodyParser.json());
-
+app.use(cors({
+    origin: 'http://localhost:5173', // Remplacez par le domaine de votre application front-end
+    methods: 'GET,POST,PUT,DELETE,OPTIONS',
+    allowedHeaders: 'Content-Type,Authorization',
+    exposedHeaders: 'Authorization'
+}));
 // Transform le token en un objet utilisable dans le code
 app.use(authMiddleware);
 
@@ -32,10 +38,12 @@ app.get("/", (_req, res) => {
 });
 
 // importation des autres scripts
-app.use("/appartements", locationsController);
-app.use("/users", usersController);
-app.use("/reservations", reservationsController);
+app.use("/appartements", appartementsController);
 app.use("/auth", authController);
+app.use("/reservations", reservationsController);
+app.use("/services", servicesController);
+app.use("/users", usersController);
+
 
 app.use(errorHandlingMiddleware);
 

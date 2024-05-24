@@ -4,18 +4,21 @@ const getAppartement = require("../appartements/repository");
 const NotFoundError = require("../common/http_errors").NotFoundError;
 const authorize = require("../common/middlewares/authorize_middleware");
 
+
 const controller = Router();
 
 //Vérifie le role staff et appel la méthode get
 controller.get(
     "/",
-    authorize(["staff", "customer", "owner","provider"]),
+    authorize(["staff", "customer", "owner","provider","admin"]),
     (_req, res, next) => {
         Service.getAll()
             .then((data) => res.json(data))
             .catch((err) => next(err));
     },
 );
+
+
 
 //Vérifie le role et appel la méthode GET en fonction de l'id
 controller.get(
@@ -38,6 +41,7 @@ controller.get(
             .catch((err) => next(err));
     },
 );
+
 
 controller.get(
     "/appartements/:appartementId/services",
