@@ -12,9 +12,10 @@ controller.post("/login", (req, res, next) => {
     authService
         .login(req.body)
         .then((token) => {
-            // En cas de succès, envoie du token JWT au client
-            res.send({
-                token: token,
+            // En cas de succès, envoie du token JWT dans l'en-tête Authorization
+            res.set('Authorization', `Bearer ${token}`);
+            res.status(200).send({
+                message: 'Login successful'
             });
         })
         .catch((err) => {

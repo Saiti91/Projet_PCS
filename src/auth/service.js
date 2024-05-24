@@ -10,7 +10,6 @@ const generateJWT = require("../common/jwt_handler");
 async function login(loginForm) {
     // Validation du formulaire de connexion avec le schéma prévu
     const { value, error } = loginSchema.validate(loginForm);
-
     // Lancement d'une erreur si la validation échoue
     if (error) {
         throw error;

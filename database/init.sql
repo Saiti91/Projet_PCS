@@ -98,7 +98,7 @@ INSERT INTO services(
 
 DROP TABLE IF EXISTS commentary;
 
--- Crée à nouveau la table avec la définition correcte
+
 CREATE TABLE commentary (
     commentary_id serial PRIMARY KEY,
     text text,

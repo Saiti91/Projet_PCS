@@ -8,7 +8,11 @@ function generateJWT(userId, role) {
             uid: userId,  // Identifiant de l'utilisateur
             urole: role,  // Rôle de l'utilisateur, utile pour les contrôles d'autorisation
         },
-        "secret"  // Clé secrète utilisée pour signer le JWT
+        "secret",
+        {
+            expiresIn: "1h"  // Durée de validité du JWT
+
+        } // Clé secrète utilisée pour signer le JWT
     );
 }
 
