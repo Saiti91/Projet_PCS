@@ -1,6 +1,6 @@
 // Importation du gestionnaire de base de données
 const db = require("../common/db_handler");
-
+const calendar = require("../calendar/repository");
 // Fonction asynchrone pour créer un nouvel emplacement
 // async function createOne(appartement) {
 //     // Création d'une chaîne de caractères avec les clés de l'objet appartement
@@ -33,7 +33,7 @@ async function createOne(appartement) {
 
         // Vérification que l'idOwner est fourni et utilisation de l'idAppartement retourné pour appeler createCalendar
         if (newAppartement.owner_id) {
-            await createCalendar(newAppartement.appartement_id, newAppartement.owner_id);
+            await calendar.createCalendar(newAppartement.appartement_id, newAppartement.owner_id);
         }
 
         // Retourner le nouvel appartement après la création du calendrier
@@ -58,7 +58,7 @@ async function createCalendar(idAppartement, idOwner) {
 
     try {
         await db.none(query, [idOwner, idAppartement]);
-        return { success: true, message: "Calendar created for two years." };
+        return { success: true, message: "calendar created for two years." };
     } catch (error) {
         console.error("Error creating calendar:", error);
         return { success: false, message: error.message };
