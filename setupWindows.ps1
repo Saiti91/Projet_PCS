@@ -19,18 +19,8 @@ if (-not $nodeInstalled) {
 }
 
 # Installer les dépendances du projet
-Write-Host "Installation des dépendances du projet..."
+Write-Host "Installation des dépendances du projet se trouvant dans package.json..."
 npm install
-npm install axios
-npm install body-parser
-npm install express
-npm install express-jwt
-npm install express.js
-npm install joi
-npm install jsonwebtoken
-npm install pg-promise
-npm install yaml
-npm install dotenv
 
 # Message final
 Write-Host "L'installation est terminée. Votre application est prête à être utilisée !"

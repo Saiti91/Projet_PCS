@@ -40,7 +40,6 @@ CREATE TABLE reservations (
 
 );
 
-
 DROP TABLE IF EXISTS services;
 CREATE TABLE services (
     services_id serial PRIMARY KEY,
@@ -80,6 +79,7 @@ CREATE TABLE appartementAvailabilities (
     FOREIGN KEY (owner_id) REFERENCES users(users_id) ON DELETE CASCADE,
     FOREIGN KEY (appartement_id) REFERENCES appartements(appartements_id) ON DELETE CASCADE
 );
+
 
 INSERT INTO users(
     role,
