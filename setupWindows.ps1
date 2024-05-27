@@ -21,6 +21,7 @@ if (-not $nodeInstalled) {
 # Installer les dépendances du projet
 Write-Host "Installation des dépendances du projet se trouvant dans package.json..."
 npm install
+npm update
 
 # Message final
 Write-Host "L'installation est terminée. Votre application est prête à être utilisée !"

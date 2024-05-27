@@ -34,14 +34,7 @@ fi
 # Installer les dépendances du projet
 echo "Installation des dépendances du projet..."
 npm install
-npm install body-parser
-npm install express
-npm install express-jwt
-npm install joi
-npm install jsonwebtoken
-npm install pg-promise
-npm install yaml
-npm install dotenv
+npm update
 
 # Message final
 echo "L'installation est terminée. Votre application est prête à être utilisée !"
