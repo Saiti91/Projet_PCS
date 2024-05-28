@@ -11,7 +11,7 @@ const controller = Router();
 //Vérifie le role staff et appel la méthode get
 controller.get(
     "/",
-    authorize(["staff"]),
+    authorize(["staff","admin"]),
     (_req, res, next) => {
         usersService.getAll()
             .then((data) => res.json(data))
@@ -22,9 +22,9 @@ controller.get(
 //Vérifie le role et appel la méthode GET en fonction de l'id
 controller.get(
     "/:id",
-    authorize(["staff", "customer", "owner","provider"]),
+    authorize(["staff", "customer", "owner","provider","admin"]),
     (req, res, next) => {
-        userService.getOne(Number(req.params.id), {
+        usersService.getOne(Number(req.params.id), {
             id: req.auth?.uid,
             role: req.auth?.urole,
         })
