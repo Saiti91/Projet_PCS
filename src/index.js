@@ -7,6 +7,9 @@ const usersController = require("./users/controller");
 const reservationsController = require("./reservations/controller");
 const servicesController = require("./services/controller");
 const authController = require("./auth/controller");
+// const commentaryController = require("./commentary/controller");
+// const calendarController = require("./calendar/controller");
+
 const idParamGuard = require("./common/middlewares/id_param_guard_middleware");
 const authMiddleware = require("./common/middlewares/auth_middleware");
 const cors = require("cors");
@@ -33,16 +36,18 @@ app.use("/*/[1-9]+$", idParamGuard);
 app.get("/", (_req, res) => {
     res.json({
         message: "Welcome to PCS API!",
-        routes: ["/users", "/auth", "/appartements", "/reservations", "/doc","/services"],
+        routes: ["/users", "/auth", "/appartements", "/reservations","/services","calendar","commentary"],
     });
 });
 
 // importation des autres scripts
-app.use("/appartements", appartementsController);
+app.use("/users", usersController);
 app.use("/auth", authController);
+app.use("/appartements", appartementsController);
 app.use("/reservations", reservationsController);
 app.use("/services", servicesController);
-app.use("/users", usersController);
+// app.use("/calendar", calendarController);
+// app.use("/commentary", commentaryController);
 
 
 app.use(errorHandlingMiddleware);

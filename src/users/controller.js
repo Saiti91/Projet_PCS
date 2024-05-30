@@ -57,7 +57,7 @@ controller.post(
 //Vérification du role et suppression en fonction de paramettre (un saff peut delete tout le monde, un user peut se delete lui-même, etc..)
 controller.delete(
     "/:id",
-    authorize(["staff"]),
+    authorize(["staff","admin"]),
     (req, res, next) => {
         usersService.deleteOne(Number(req.params.id), {
             id: req.auth?.uid,
