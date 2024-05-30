@@ -46,7 +46,7 @@ async function register(user) {
     }
 
     // Création de l'utilisateur avec le rôle "customer" et retour de l'utilisateur créé
-    return await userRepository.createOne({ ...value, role: "customer" });
+    return await userRepository.createOne({ ...value });
 }
 
 // Exportation des fonctions pour utilisation dans d'autres parties de l'application
