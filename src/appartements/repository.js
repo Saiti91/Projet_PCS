@@ -1,21 +1,7 @@
 // Importation du gestionnaire de base de données
 const db = require("../common/db_handler");
 const calendar = require("../calendar/repository");
-// Fonction asynchrone pour créer un nouvel emplacement
-// async function createOne(appartement) {
-//     // Création d'une chaîne de caractères avec les clés de l'objet appartement
-//     const attributesString = Object.keys(appartement).join(",");
-//     // Création d'une chaîne de valeurs, préparées pour une insertion SQL sécurisée
-//     const valuesString = Object.keys(appartement)
-//         .map((k) => `$<${k}>`)
-//         .join(",");
-//
-//     // Exécution de la requête SQL pour insérer les données et retourner l'objet créé
-//     return await db.one(
-//         `INSERT INTO appartements(${attributesString}) VALUES(${valuesString}) RETURNING *;`,
-//         appartement
-//     );
-// }
+
 async function createOne(appartement) {
     // Création d'une chaîne de caractères avec les clés de l'objet appartement
     const attributesString = Object.keys(appartement).join(",");
