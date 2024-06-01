@@ -78,6 +78,25 @@ async function getAll() {
     return res;
 }
 
+// Fonction asynchrone pour récupérer tous les emplacements
+async function getCarousel() {
+    // Execute the SQL query to get all locations
+    const res = await db.manyOrNone(`
+        SELECT apartments.name,apartments.imagePath, adress.ville  FROM apartments
+        JOIN address ON appartments.address_id = address.address_id
+        ORDER BY RANDOM()
+        LIMIT 10;
+    `);
+
+    // Return an empty array if no location is found
+    if (!res) {
+        return [];
+    }
+
+    // Return the list of found locations
+    return res;
+}
+
 // Fonction asynchrone pour mettre à jour un emplacement spécifique
 async function updateOne(id, apartment) {
     // Création d'une chaîne de caractères pour la mise à jour des attributs
@@ -105,4 +124,4 @@ async function deleteOne(id) {
 }
 
 // Exportation des fonctions pour utilisation dans d'autres parties du code
-module.exports = { createOne, getOne, getAll, updateOne, deleteOne, };
+module.exports = { createOne, getOne, getAll, updateOne, deleteOne, getCarousel };
