@@ -1,12 +1,13 @@
 CREATE TYPE role AS ENUM ('admin', 'staff', 'owner', 'customer','provider');
 CREATE TYPE serviceType AS ENUM ('menage','jardin','plomberie','travaux');
+CREATE TYPE apartmentsTypes AS ENUM ('apartment','house','studio','villa');
+CREATE TYPE addressComplements AS ENUM ('bis','ter');
+
 CREATE EXTENSION citext;
 
-DROP TABLE IF EXISTS users;
 CREATE TABLE users (
     users_id serial PRIMARY KEY,
     created_at timestamp DEFAULT NOW(),
-    
     role role,
     email citext UNIQUE,
     password text,
@@ -14,25 +15,38 @@ CREATE TABLE users (
     last_name text
 );
 
-DROP TABLE IF EXISTS appartements;
-CREATE TABLE appartements (
+CREATE TABLE address (
+     address_id serial PRIMARY KEY,
+     number int,
+     addressComplement addressComplements,
+     building citext,
+     apartmentNumber int,
+     street citext,
+     CP int,
+     ville citext
+);
+
+CREATE TABLE apartments (
     appartements_id serial PRIMARY KEY,
     created_at timestamp DEFAULT NOW(),
     owner_id serial REFERENCES users(users_id) ON DELETE CASCADE,
     longitude float8,
     latitude float8,
     surface int,
-    address text,
+    address_id int REFERENCES address(address_id),
     capacity int,
-    price int,
-    available boolean
+    available boolean,
+    apartmentsType apartmentsTypes,
+    garden boolean,
+    roomNumber int,
+    pool boolean,
+    price int
 );
 
-DROP TABLE IF EXISTS reservations;
 CREATE TABLE reservations (
     reservations_id serial PRIMARY KEY,
     created_at timestamp DEFAULT NOW(),
-    location serial REFERENCES appartements(appartements_id) ON DELETE CASCADE,
+    location serial REFERENCES apartments (appartements_id) ON DELETE CASCADE,
     customer serial REFERENCES users(users_id) ON DELETE CASCADE,
     date_start date, 
     date_end date,
@@ -40,7 +54,6 @@ CREATE TABLE reservations (
 
 );
 
-DROP TABLE IF EXISTS services;
 CREATE TABLE services (
     services_id serial PRIMARY KEY,
     name text,
@@ -53,7 +66,6 @@ CREATE TABLE services (
     price FLOAT
 );
 
-DROP TABLE IF EXISTS commentary;
 CREATE TABLE commentary (
     commentary_id serial PRIMARY KEY,
     text text,
@@ -77,7 +89,7 @@ CREATE TABLE appartementAvailabilities (
     owner_id INT NOT NULL,
     appartement_id INT NOT NULL,
     FOREIGN KEY (owner_id) REFERENCES users(users_id) ON DELETE CASCADE,
-    FOREIGN KEY (appartement_id) REFERENCES appartements(appartements_id) ON DELETE CASCADE
+    FOREIGN KEY (appartement_id) REFERENCES apartments (appartements_id) ON DELETE CASCADE
 );
 
 
@@ -94,18 +106,24 @@ INSERT INTO users(
       ('customer', 'customer@user.com', 'password', 'Jim', 'Beam'),
       ('provider', 'provider@user.com', 'password', 'Jack', 'Daniels');
 
-
-INSERT INTO appartements(
+INSERT INTO address (number, addressComplement, building, apartmentNumber, street, CP, ville)
+VALUES (1, 'bis', 'A', 2, 'rue Erard', 75007, 'Paris');
+INSERT INTO apartments(
     owner_id,
     surface,
-    address,
+    address_id,
     longitude,
     latitude,
     capacity,
+    apartmentsType,
+    garden,
+    roomNumber,
+    pool,
     price,
     available
 ) VALUES
-    (3, 30, 'Paris 04, 6 avenue de la boustifaille', 10, 10, 3, 60,true);
+    (3, 30, 1, 10, 10, 3,'apartment',false,2,false, 60,true);
+
 
 INSERT Into reservations(
     location,

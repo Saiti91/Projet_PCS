@@ -8,7 +8,6 @@ const createServicesSchema = Joi.object({
     price: Joi.number().positive().required(), // Prix du service (par utilisation, doit être un nombre positif
     provider: Joi.string().required(),
     address: Joi.string().required(),
-
 });
 
 // Schéma pour la mise à jour d'un emplacement existant

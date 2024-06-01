@@ -1,7 +1,7 @@
 // Importation des schémas
 const { createReservationSchema, updateReservationSchema } = require("./model");
 const Repository = require("./repository");
-const locationService = require("../appartements/service");
+const locationService = require("../apartments/service");
 const { InvalidArgumentError } = require("../common/service_errors");
 
 async function createOne(reservation) {

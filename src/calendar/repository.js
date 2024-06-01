@@ -13,7 +13,7 @@
 //     try {
 //         // Exécution de la requête SQL pour insérer les données et retourner l'ID de l'appartement créé
 //         const newAppartement = await db.one(
-//             `INSERT INTO appartements(${attributesString}) VALUES(${valuesString}) RETURNING appartements_id, owner_id;`,
+//             `INSERT INTO apartments(${attributesString}) VALUES(${valuesString}) RETURNING appartements_id, owner_id;`,
 //             appartement
 //         );
 //
@@ -34,7 +34,7 @@
 // // Fonction asynchrone pour récupérer un emplacement spécifique par son ID
 // async function getOne(id) {
 //     // Exécution de la requête SQL pour récupérer un emplacement par son ID
-//     return await db.oneOrNone("SELECT * FROM appartements WHERE appartements_id=${id}", { id });
+//     return await db.oneOrNone("SELECT * FROM apartments WHERE appartements_id=${id}", { id });
 // }
 //
 // async function createCalendar(idAppartement, idOwner) {
@@ -72,7 +72,7 @@
 // // Fonction asynchrone pour récupérer tous les emplacements
 // async function getAll() {
 //     // Exécution de la requête SQL pour récupérer tous les emplacements
-//     const res = await db.manyOrNone("SELECT * FROM appartements");
+//     const res = await db.manyOrNone("SELECT * FROM apartments");
 //
 //     // Retourne un tableau vide si aucun emplacement n'est trouvé
 //     if (!res) {
@@ -92,7 +92,7 @@
 //
 //     // Exécution de la requête SQL pour mettre à jour l'emplacement et retourner l'objet modifié
 //     const modified = await db.oneOrNone(
-//         `UPDATE appartements SET ${attrsStr} WHERE appartements_id = ${id} RETURNING *;`,
+//         `UPDATE apartments SET ${attrsStr} WHERE appartements_id = ${id} RETURNING *;`,
 //         { id, ...appartement }
 //     );
 //
@@ -104,7 +104,7 @@
 // async function deleteOne(id) {
 //     // Exécution de la requête SQL pour supprimer l'emplacement et retourner l'ID supprimé
 //     return await db.oneOrNone(
-//         "DELETE FROM appartements WHERE appartements_id=${id} RETURNING appartements_id;",
+//         "DELETE FROM apartments WHERE appartements_id=${id} RETURNING appartements_id;",
 //         { id }
 //     );
 // }
