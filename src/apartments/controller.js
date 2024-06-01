@@ -12,6 +12,12 @@ controller.get("/", (req, res, next) => {
         .catch((err) => next(err));
 });
 
+controller.get("/carousel", (req, res, next) => {
+    appartementsServices.getCarousel()
+        .then((data) => res.json(data))
+        .catch((err) => next(err));
+});
+
 controller.get("/:id", (req, res, next) => {
     appartementsServices.getOne(Number(req.params.id))
         .then((data) => {

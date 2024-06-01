@@ -50,6 +50,11 @@ async function getAll() {
     return await Repository.getAll();
 }
 
+// Fonction asynchrone pour récupérer 10 emplacements
+async function getCarousel() {
+    return await Repository.getCarousel();
+}
+
 // Fonction asynchrone pour mettre à jour un emplacement existant
 async function updateOne(id, location) {
     // Validation de l'emplacement avec le schéma de mise à jour
@@ -70,4 +75,4 @@ async function deleteOne(id) {
 }
 
 // Exportation des fonctions pour utilisation dans d'autres parties de l'application
-module.exports = { createOne, getOne, getAll, updateOne, deleteOne };
+module.exports = { createOne, getOne, getAll, updateOne, deleteOne, getCarousel };
