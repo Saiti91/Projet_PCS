@@ -31,7 +31,7 @@ async function getOneBy(attribute, value) {
 
 async function getAppartementById(id) {
     try {
-        const result = await db.oneOrNone('SELECT latitude, longitude FROM appartements WHERE appartements_id = $1', [id]);
+        const result = await db.oneOrNone('SELECT latitude, longitude FROM apartments WHERE appartements_id = $1', [id]);
         return result;
     } catch (error) {
         console.error("Error fetching appartement details:", error);

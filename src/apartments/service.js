@@ -14,14 +14,14 @@ async function createOne(location) {
     }
 
     // Récupération de l'utilisateur propriétaire pour vérifier son existence
-    const owner = await UserRepository.getOne(location.owner);
+    const owner = await UserRepository.getOneBy("email", location.ownerEmail);
     if (!owner) {
         throw new InvalidArgumentError("Provided owner does not have an account!");
     }
 
     // Mise à jour du rôle de l'utilisateur si nécessaire
     if (owner.role === "customer") {
-        await UserRepository.updateOne(location.owner, {role: "owner"});
+        await UserRepository.updateOne(location.ownerEmail, {role: "owner"});
     }
 
     // Obtention des coordonnées géographiques

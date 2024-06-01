@@ -1,6 +1,6 @@
 const { Router } = require("express");
 const Service = require("./service");
-const getAppartement = require("../appartements/repository");
+const getAppartement = require("../apartments/repository");
 const NotFoundError = require("../common/http_errors").NotFoundError;
 const authorize = require("../common/middlewares/authorize_middleware");
 
