@@ -3,6 +3,9 @@ const db = require("../common/db_handler");
 const calendar = require("../calendar/repository");
 
 async function createOne(apartment) {
+    const { imagePaths } = apartment;
+    delete apartment.imagePaths;
+
     // Retrieve the owner_id from the users table using the ownerEmail
     const owner = await db.oneOrNone("SELECT users_id FROM users WHERE email=$1", [apartment.ownerEmail]);
 
@@ -25,19 +28,32 @@ async function createOne(apartment) {
         .join(",");
 
     try {
-        // Execute the SQL query to insert the data and return the ID of the created apartment
-        const newApartment = await db.one(
-            `INSERT INTO apartments(${attributesString}) VALUES(${valuesString}) RETURNING apartments_id, owner_id;`,
-            apartment
-        );
+        return await db.tx(async t => {
+            // Insert the apartment
+            const newApartment = await t.one(
+                `INSERT INTO apartments(${attributesString}) VALUES(${valuesString}) RETURNING apartments_id, owner_id;`,
+                apartment
+            );
 
-        // Return the new apartment
-        return newApartment;
+            // Insert the image paths
+            if (imagePaths && imagePaths.length > 0) {
+                const insertImageQueries = imagePaths.map(path => {
+                    return t.none(
+                        `INSERT INTO apartmentsimage(apartment_id, image_path) VALUES($1, $2)`,
+                        [newApartment.apartments_id, path]
+                    );
+                });
+
+                await t.batch(insertImageQueries);
+            }
+            return newApartment;
+        });
     } catch (error) {
         console.error("Failed to create apartment:", error);
         throw error; // Rethrow the error for higher management
     }
 }
+
 // Fonction asynchrone pour récupérer un emplacement spécifique par son ID
 async function getOne(id) {
     // Exécution de la requête SQL pour récupérer un emplacement par son ID
