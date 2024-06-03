@@ -32,7 +32,7 @@ controller.get("/:id", (req, res, next) => {
         .catch((err) => next(err));
 });
 
-controller.post("/", authorize(["staff"]), (req, res, next) => {
+controller.post("/", authorize(["staff","admin"]), (req, res, next) => {
     appartementsServices.createOne(req.body)
         .then((data) => {
             res.status(201).json(data);
