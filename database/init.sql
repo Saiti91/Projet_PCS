@@ -1,8 +1,6 @@
 CREATE TYPE role AS ENUM ('admin', 'staff', 'owner', 'customer','provider');
-CREATE TYPE serviceType AS ENUM ('menage','jardin','plomberie','travaux');
 CREATE TYPE apartmentsTypes AS ENUM ('apartment','house','studio','villa');
 CREATE TYPE addressComplements AS ENUM ('bis','ter');
-
 CREATE EXTENSION citext;
 
 CREATE TABLE users (
@@ -26,27 +24,39 @@ CREATE TABLE address (
      ville citext
 );
 
-CREATE TABLE apartments (
-    appartements_id serial PRIMARY KEY,
-    created_at timestamp DEFAULT NOW(),
-    owner_id serial REFERENCES users(users_id) ON DELETE CASCADE,
-    longitude float8,
-    latitude float8,
-    surface int,
-    address_id int REFERENCES address(address_id),
-    capacity int,
-    available boolean,
-    apartmentsType apartmentsTypes,
-    garden boolean,
-    roomNumber int,
-    pool boolean,
-    price int
+
+
+CREATE TABLE features (
+                          feature_id serial PRIMARY KEY,
+                          name citext UNIQUE
 );
+
+CREATE TABLE apartments (
+                            apartments_id serial PRIMARY KEY,
+                            created_at timestamp DEFAULT NOW(),
+                            owner_id int REFERENCES users(users_id) ON DELETE CASCADE,
+                            longitude float8,
+                            latitude float8,
+                            surface int,
+                            address_id int REFERENCES address(address_id),
+                            capacity int,
+                            available boolean,
+                            apartmentsType apartmentsTypes,
+                            roomNumber int,
+                            price int
+);
+
+CREATE TABLE apartmentFeatures (
+                                   apartment_id int REFERENCES apartments(apartments_id) ON DELETE CASCADE,
+                                   feature_id int REFERENCES serviceFeatures(feature_id) ON DELETE CASCADE,
+                                   PRIMARY KEY (apartment_id, feature_id)
+);
+
 
 CREATE TABLE reservations (
     reservations_id serial PRIMARY KEY,
     created_at timestamp DEFAULT NOW(),
-    location serial REFERENCES apartments (appartements_id) ON DELETE CASCADE,
+    location serial REFERENCES apartments (apartments_id) ON DELETE CASCADE,
     customer serial REFERENCES users(users_id) ON DELETE CASCADE,
     date_start date, 
     date_end date,
@@ -54,10 +64,21 @@ CREATE TABLE reservations (
 
 );
 
+CREATE TABLE serviceFeatures (
+    feature_id serial PRIMARY KEY,
+    name citext
+);
+CREATE TABLE serviceTypeFeatures (
+    serviceType_id int REFERENCES serviceTypes(serviceTypes_id) ON DELETE CASCADE,
+    feature_id int REFERENCES serviceFeatures(feature_id) ON DELETE CASCADE,
+    PRIMARY KEY (serviceType_id, feature_id)
+);
+
+
 CREATE TABLE services (
     services_id serial PRIMARY KEY,
     name text,
-    type serviceType,
+    type serial REFERENCES serviceTypes(serviceTypes_id) ON DELETE CASCADE,
     providerAddress text,
     providerLongitude float8,
     providerLatitude float8,
@@ -65,6 +86,18 @@ CREATE TABLE services (
     provider serial REFERENCES users(users_id) ON DELETE CASCADE,
     price FLOAT
 );
+CREATE TABLE apartmentsImage (
+                                 image_id serial PRIMARY KEY,
+                                 path citext,
+                                 apartment_id serial REFERENCES apartments(apartments_id) ON DELETE CASCADE
+);
+
+CREATE TABLE servicesImage (
+                               image_id serial PRIMARY KEY,
+                               path citext,
+                               service_id serial REFERENCES services(services_id) ON DELETE CASCADE
+);
+
 
 CREATE TABLE commentary (
     commentary_id serial PRIMARY KEY,
@@ -82,65 +115,12 @@ CREATE TABLE providerAvailabilities (
     FOREIGN KEY (provider_id) REFERENCES users(users_id) ON DELETE CASCADE
 );
 
-CREATE TABLE appartementAvailabilities (
-    appartementAvailabilities_id SERIAL PRIMARY KEY,
+CREATE TABLE apartmentAvailabilities (
+    apartmentAvailabilities_id SERIAL PRIMARY KEY,
     available BOOLEAN NOT NULL,
     date date NOT NULL,
     owner_id INT NOT NULL,
-    appartement_id INT NOT NULL,
+    apartment_id INT NOT NULL,
     FOREIGN KEY (owner_id) REFERENCES users(users_id) ON DELETE CASCADE,
-    FOREIGN KEY (appartement_id) REFERENCES apartments (appartements_id) ON DELETE CASCADE
+    FOREIGN KEY (apartment_id) REFERENCES apartments (apartments_id) ON DELETE CASCADE
 );
-
-
-INSERT INTO users(
-    role,
-    email,
-    password,
-    first_name,
-    last_name
-) VALUES
-      ('admin', 'test@user.com', 'password', 'Georges', 'Abitbol'),
-      ('staff', 'staff@user.com', 'password', 'John', 'Doe'),
-      ('owner', 'owner@user.com', 'password', 'Jane', 'Doe'),
-      ('customer', 'customer@user.com', 'password', 'Jim', 'Beam'),
-      ('provider', 'provider@user.com', 'password', 'Jack', 'Daniels');
-
-INSERT INTO address (number, addressComplement, building, apartmentNumber, street, CP, ville)
-VALUES (1, 'bis', 'A', 2, 'rue Erard', 75007, 'Paris');
-INSERT INTO apartments(
-    owner_id,
-    surface,
-    address_id,
-    longitude,
-    latitude,
-    capacity,
-    apartmentsType,
-    garden,
-    roomNumber,
-    pool,
-    price,
-    available
-) VALUES
-    (3, 30, 1, 10, 10, 3,'apartment',false,2,false, 60,true);
-
-
-INSERT Into reservations(
-    location,
-    customer,
-    date_start,
-    date_end,
-    price
-) VALUES
-    (1,4,'2024-06-01','2024-06-02',60);
-
-INSERT INTO services(
-    name,
-    type,
-    providerAddress,
-    providerLongitude,
-    providerLatitude,
-    provider,
-    price
-) VALUES
-    ('Ménage', 'menage', 'Paris 07, 11 rue Erard', 10, 10, 5, 20);
