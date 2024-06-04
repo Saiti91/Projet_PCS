@@ -9,6 +9,10 @@ const createServicesSchema = Joi.object({
     provider: Joi.string().required(),
     address: Joi.string().required(),
 });
+const createServicesTypeSchema = Joi.object({
+    name: Joi.string().required(), // Type de bien
+    type: Joi.string().required(),
+});
 
 // Schéma pour la mise à jour d'un emplacement existant
 const updateServicesSchema = Joi.object({
@@ -21,5 +25,6 @@ const updateServicesSchema = Joi.object({
 // Exportation des schémas pour utilisation dans d'autres parties du code
 module.exports = {
     createServicesSchema: createServicesSchema,
+    createServicesTypeSchema: createServicesTypeSchema,
     updateServicesSchema: updateServicesSchema,
 };

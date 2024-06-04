@@ -1,12 +1,35 @@
-const { createServicesSchema, updateServicesSchema } = require("./model");
+const {createServicesSchema, updateServicesSchema, createServicesTypeSchema} = require("./model");
 const Repository = require("./repository");
-const { calculateDistance } = require("./locationService");
-const { InvalidArgumentError, UnauthorizedError } = require("../common/service_errors");
-const { getGeoCoordinates } = require("../common/middlewares/gps_middleware");
+const {calculateDistance} = require("./locationService");
+const {InvalidArgumentError, UnauthorizedError} = require("../common/service_errors");
+const {getGeoCoordinates} = require("../common/middlewares/gps_middleware");
 
 async function createOne(serviceData) {
     // Valider le service avec un schéma Joi ou similaire
-    const { value, error } = createServicesSchema.validate(serviceData);
+    const {value, error} = createServicesSchema.validate(serviceData);
+    if (error) {
+        throw error;
+    }
+    // Vérifier l'unicité du nom du service
+    const existingService = await Repository.getOneBy("name", value.name);
+    if (existingService) {
+        throw new InvalidArgumentError("This service name is already taken.");
+    }
+    // Obtenir les coordonnées géographiques de l'adresse
+    const coordinates = await getGeoCoordinates(value.address);
+    if (!coordinates) {
+        throw new Error("Failed to geocode address.");
+    }
+    // Ajouter les coordonnées au service
+    value.latitude = coordinates.latitude;
+    value.longitude = coordinates.longitude;
+    // Créer le service dans la base de données
+    return await Repository.createOne(value);
+}
+
+async function createOnetype(serviceData) {
+    // Valider le service avec un schéma Joi ou similaire
+    const {value, error} = createServicesTypeSchema.validate(serviceData);
     if (error) {
         throw error;
     }
@@ -36,7 +59,7 @@ async function getOne(id, issuer) {
 
     const service = await Repository.getOne(id);
     if (service) {
-        return { ...service };
+        return {...service};
     } else return service;
 }
 
@@ -68,21 +91,21 @@ async function getServicesWithinRadius(lat, lon, maxDistance) {
 
 async function getAll() {
     const services = await Repository.getAll();
-    return services.map((service) => ({ ...service }));
+    return services.map((service) => ({...service}));
 }
 
 async function getAppartementById(id) {
     const services = await Repository.getAppartementById(id);
-    return services.map((service) => ({ ...service/*, password: "[redacted]" */}));
+    return services.map((service) => ({...service/*, password: "[redacted]" */}));
 }
 
 // fonction de changement d'information sur un utilisateur en fonction de son ID
 async function updateOne(id, service, issuer) {
-    if (["customer", "owner","provider"].includes(issuer.role) && issuer.id !== id) {
+    if (["customer", "owner", "provider"].includes(issuer.role) && issuer.id !== id) {
         throw new UnauthorizedError("You cannot update services.");
     }
 
-    if (["customer", "owner","provider"].includes(issuer.role) && service.role) {
+    if (["customer", "owner", "provider"].includes(issuer.role) && service.role) {
         throw new UnauthorizedError("You cannot update services.");
     }
 
@@ -90,7 +113,7 @@ async function updateOne(id, service, issuer) {
     //     throw new UnauthorizedError("Only admins can create admins.");
     // }
 
-    const { value, error } = updateServicesSchema.validate(service);
+    const {value, error} = updateServicesSchema.validate(service);
     if (error) {
         throw error;
     }
@@ -98,7 +121,7 @@ async function updateOne(id, service, issuer) {
     const newService = await Repository.updateOne(id, value);
 
     if (newService) {
-        return { ...newService/*, password: "[redacted]"*/ };
+        return {...newService/*, password: "[redacted]"*/};
     }
 
     return newService;
@@ -107,11 +130,14 @@ async function updateOne(id, service, issuer) {
 // Suppression d'un utilisateur
 async function deleteOne(id, issuer) {
 
-    if (["customer", "owner","provider"].includes(issuer.role)) {
+    if (["customer", "owner", "provider"].includes(issuer.role)) {
         throw new UnauthorizedError("You cannot delete a service.");
     }
 
     return await Repository.deleteOne(id);
 }
 
-module.exports = { createOne, getOne, getAll, getServicesWithinRadius,getAppartementById, updateOne, deleteOne };
+module.exports = {
+    createOne, getOne, getAll, getServicesWithinRadius,
+    getAppartementById, updateOne, deleteOne, createOnetype
+};

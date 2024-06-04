@@ -44,9 +44,9 @@
 //
 //     try {
 //         await db.none(query, [idOwner, idAppartement]);
-//         return { success: true, message: "calendar created for two years." };
+//         return { success: true, message: "apartmentCalendar created for two years." };
 //     } catch (error) {
-//         console.error("Error creating calendar:", error);
+//         console.error("Error creating apartmentCalendar:", error);
 //         return { success: false, message: error.message };
 //     }
 // }
@@ -61,9 +61,9 @@
 //     try {
 //         // Exécuter la requête avec l'identifiant du provider
 //         await db.none(query, [providerId]);
-//         return { success: true, message: "calendar created for provider for two years." };
+//         return { success: true, message: "apartmentCalendar created for provider for two years." };
 //     } catch (error) {
-//         console.error("Error creating calendar for provider:", error);
+//         console.error("Error creating apartmentCalendar for provider:", error);
 //         return { success: false, message: error.message };
 //     }
 // }
