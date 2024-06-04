@@ -4,7 +4,6 @@ const getAppartement = require("../apartments/repository");
 const NotFoundError = require("../common/http_errors").NotFoundError;
 const authorize = require("../common/middlewares/authorize_middleware");
 
-
 const controller = Router();
 
 //TODO: ADD pdf and service completion
@@ -19,8 +18,6 @@ controller.get(
             .catch((err) => next(err));
     },
 );
-
-
 
 //Vérifie le role et appel la méthode GET en fonction de l'id
 controller.get(
@@ -71,7 +68,19 @@ controller.get(
 //Vérifie le role Staff et appel la méthode Create user
 controller.post(
     "/",
-    authorize(["staff"]),
+    authorize(["staff","admin"]),
+    (req, res, next) => {
+        Service.createOne(req.body)
+            .then((data) => {
+                res.status(201).json(data);
+            })
+            .catch((err) => next(err));
+    },
+);
+
+controller.post(
+    "/type",
+    authorize(["staff","admin"]),
     (req, res, next) => {
         Service.createOne(req.body)
             .then((data) => {

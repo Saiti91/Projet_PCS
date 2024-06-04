@@ -6,7 +6,6 @@ const authorize = require("../common/middlewares/authorize_middleware");
 const controller = Router();
 
 //TODO: Add Mail service
-//
 
 //Vérifie le role staff et appel la méthode get
 controller.get(
