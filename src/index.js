@@ -37,7 +37,7 @@ app.use("/*/[1-9]+$", idParamGuard);
 app.get("/", (_req, res) => {
     res.json({
         message: "Welcome to PCS API!",
-        routes: ["/users", "/auth", "/apartments", "/reservations","/services","calendar","commentary","apartmentsCalendar","servicesCalendar"],
+        routes: ["/users", "/auth", "/apartments", "/reservations", "/services", "calendar", "commentary", "apartmentsCalendar", "servicesCalendar"],
     });
 });
 

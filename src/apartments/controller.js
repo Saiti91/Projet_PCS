@@ -39,7 +39,7 @@ controller.get("/:id", async (req, res, next) => {
 
 controller.post("/", authorize(["staff", "admin"]), validate(createLocationSchema), async (req, res, next) => {
     try {
-        const data = await appartementsServices.createOne(req.body);
+        const data = await appartemezntsServices.createOne(req.body);
         res.status(201).json(data);
     } catch (err) {
         next(err);

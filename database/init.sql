@@ -1,6 +1,7 @@
 CREATE TYPE role AS ENUM ('admin', 'staff', 'owner', 'customer','provider');
 CREATE TYPE addressComplements AS ENUM ('bis', 'ter');
 CREATE TYPE subscriptionType AS ENUM ('free', 'bagPacker', 'explorator');
+CREATE TYPE commentaryType AS ENUM ('apartment', 'serviceProvider');
 
 -- citext is a case-insensitive version of the standard text data type.
 -- version insensible à la casses du type de données text standard.
@@ -36,7 +37,6 @@ CREATE TABLE users
     address_id int           REFERENCES address (address_id) ON DELETE SET NULL
 );
 
-
 -- Abonnements
 CREATE TABLE subscriptions
 (
@@ -58,12 +58,13 @@ CREATE TABLE bans
     reason     text
 );
 
--- type d'appartements
+-- Type d'appartements
 CREATE TABLE apartmentsTypes
 (
     apartmentsTypes_id serial PRIMARY KEY,
     name               citext
 );
+
 -- Apartments
 CREATE TABLE apartments
 (
@@ -125,6 +126,7 @@ CREATE TABLE servicesProviders
 (
     servicesProviders_id serial PRIMARY KEY,
     name                 text,
+    telephone            VARCHAR(15) CHECK (telephone ~ '^\+?\d{1,15}$'),
     type                 int REFERENCES serviceTypes (serviceTypes_id) ON DELETE CASCADE,
     address_id           int REFERENCES address (address_id) ON DELETE CASCADE,
     maxOperatingRadius   int,
@@ -160,21 +162,22 @@ CREATE TABLE servicesImage
 );
 
 -- Comments
-CREATE TABLE commentary
+CREATE TABLE comments
 (
-    commentary_id       serial PRIMARY KEY,
-    text                text,
-    rating              float CHECK (rating >= 0 AND rating <= 5),
-    customer_id         int REFERENCES users (users_id) ON DELETE CASCADE,
-    reservation_id      int REFERENCES reservations (reservations_id) ON DELETE CASCADE,
-    servicesProvider_id int REFERENCES servicesProviders (servicesProviders_id) ON DELETE CASCADE
+    comments_id SERIAL PRIMARY KEY,
+    type        commentaryType NOT NULL,
+    entity_id   VARCHAR(255)   NOT NULL,
+    comment     TEXT           NOT NULL,
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Images pour les commentaires
 CREATE TABLE commentaryImages
 (
-    image_id      serial PRIMARY KEY,
-    path          citext,
-    commentary_id int REFERENCES commentary (commentary_id) ON DELETE CASCADE
+    image_id    serial PRIMARY KEY,
+    path        citext,
+    comments_id int REFERENCES comments (comments_id) ON DELETE CASCADE
 );
 
 -- Provider Availabilities

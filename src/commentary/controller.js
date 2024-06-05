@@ -1,64 +1,65 @@
-// const { Router } = require("express");
-// const Service = require("./service");
-// const { Location, PartialLocation } = require("./model");
-// const { NotFoundError } = require("../common/http_errors");
-// const authorize = require("../common/middlewares/authorize_middleware");
-//
-// const controller = Router();
-// //TODO: Code all commentary methode
-// controller.get("/", (req, res, next) => {
-//     Service.getAll()
-//         .then((data) => res.json(data))
-//         .catch((err) => next(err));
-// });
-//
-// controller.get("/:id", (req, res, next) => {
-//     Service.getOne(Number(req.params.id))
-//         .then((data) => {
-//             if (data === null) {
-//                 throw new NotFoundError(
-//                     `Could not find location with id ${req.params.id}`,
-//                 );
-//             }
-//
-//             res.json(data);
-//         })
-//         .catch((err) => next(err));
-// });
-//
-// controller.post("/", authorize(["staff"]), (req, res, next) => {
-//     Service.createOne(req.body)
-//         .then((data) => {
-//             res.status(201).json(data);
-//         })
-//         .catch((err) => next(err));
-// });
-//
-// controller.delete("/:id", authorize(["staff", "owner"]), (req, res, next) => {
-//     Service.deleteOne(Number(req.params.id))
-//         .then((id) => {
-//             if (id === null) {
-//                 throw new NotFoundError(
-//                     `Could not find location with id ${req.params.id}`,
-//                 );
-//             }
-//
-//             res.status(204).json();
-//         })
-//         .catch((err) => next(err));
-// });
-//
-// controller.patch("/:id", authorize(["staff", "owner"]), (req, res, next) => {
-//     Service.updateOne(Number(req.params.id), req.body)
-//         .then((data) => {
-//             if (data === null) {
-//                 throw new NotFoundError(
-//                     `Could not find location with id ${req.params.id}`,
-//                 );
-//             }
-//             res.status(200).json(data);
-//         })
-//         .catch((err) => next(err));
-// });
-//
-// module.exports = controller;
+const {Router} = require("express");
+const commentsService = require("./service");
+const {NotFoundError} = require("../common/http_errors");
+const authorize = require("../common/middlewares/authorize_middleware");
+
+const controller = Router();
+
+controller.get("/", async (req, res, next) => {
+    try {
+        const data = await commentsService.getAllComments();
+        res.json(data);
+    } catch (err) {
+        next(err);
+    }
+});
+
+controller.get("/:type/:id", async (req, res, next) => {
+    try {
+        const {type, id} = req.params;
+        const data = await commentsService.getCommentsByEntity({type, id});
+        if (data.length === 0) {
+            throw new NotFoundError(`No comments found for ${type} with id ${id}`);
+        }
+        res.json(data);
+    } catch (err) {
+        next(err);
+    }
+});
+
+controller.post("/", authorize(["user", "admin", "staff", "owner"]), async (req, res, next) => {
+    try {
+        const comment = await commentsService.createComment(req.body);
+        res.status(201).json(comment);
+    } catch (err) {
+        next(err);
+    }
+});
+
+controller.patch("/:id", authorize(["user", "admin", "staff", "owner"]), async (req, res, next) => {
+    try {
+        const {id} = req.params;
+        const updatedComment = await commentsService.updateComment(id, req.body);
+        if (!updatedComment) {
+            throw new NotFoundError(`Could not find comment with id ${id}`);
+        }
+        res.status(200).json(updatedComment);
+    } catch (err) {
+        next(err);
+    }
+});
+
+controller.delete("/:id", authorize(["user", "admin", "staff", "owner"]), async (req, res, next) => {
+    try {
+        const {id} = req.params;
+        const deletedComment = await commentsService.deleteComment(id);
+        if (!deletedComment) {
+            throw new NotFoundError(`Could not find comment with id ${id}`);
+        }
+        res.status(204).json();
+    } catch (err) {
+        next(err);
+    }
+});
+
+module.exports = controller;

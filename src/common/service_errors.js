@@ -21,4 +21,4 @@ class UnauthorizedError extends Error {
 }
 
 // Exportation des classes d'erreur pour utilisation dans d'autres parties de l'application
-module.exports = { InvalidArgumentError, AuthError, UnauthorizedError };
+module.exports = {InvalidArgumentError, AuthError, UnauthorizedError};

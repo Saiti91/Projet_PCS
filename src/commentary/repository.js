@@ -1,113 +1,71 @@
-// // Importation du gestionnaire de base de données
-// const db = require("../common/db_handler");
-//
-// //TODO: Code commentary methode for BDD
-// async function createOne(appartement) {
-//     // Création d'une chaîne de caractères avec les clés de l'objet appartement
-//     const attributesString = Object.keys(appartement).join(",");
-//     // Création d'une chaîne de valeurs, préparées pour une insertion SQL sécurisée
-//     const valuesString = Object.keys(appartement)
-//         .map(k => `$<${k}>`)
-//         .join(",");
-//
-//     try {
-//         // Exécution de la requête SQL pour insérer les données et retourner l'ID de l'appartement créé
-//         const newAppartement = await db.one(
-//             `INSERT INTO apartments(${attributesString}) VALUES(${valuesString}) RETURNING appartements_id, owner_id;`,
-//             appartement
-//         );
-//
-//         // Vérification que l'idOwner est fourni et utilisation de l'idAppartement retourné pour appeler createCalendar
-//         if (newAppartement.owner_id) {
-//             await createCalendar(newAppartement.appartement_id, newAppartement.owner_id);
-//         }
-//
-//         // Retourner le nouvel appartement après la création du calendrier
-//         return newAppartement;
-//     } catch (error) {
-//         console.error("Failed to create appartement:", error);
-//         throw error; // Relancer l'erreur pour une gestion plus haute
-//     }
-// }
-//
-//
-// // Fonction asynchrone pour récupérer un emplacement spécifique par son ID
-// async function getOne(id) {
-//     // Exécution de la requête SQL pour récupérer un emplacement par son ID
-//     return await db.oneOrNone("SELECT * FROM apartments WHERE appartements_id=${id}", { id });
-// }
-//
-// async function createCalendar(idAppartement, idOwner) {
-//     const query = `INSERT INTO appartementAvailabilities (available, date, owner_id, appartement_id)
-//         SELECT true, gs.date, $1 as owner_id, $2 as appartement_id
-//         FROM generate_series(current_date, current_date + interval '2 years', '1 day') as gs(date)`;
-//
-//     try {
-//         await db.none(query, [idOwner, idAppartement]);
-//         return { success: true, message: "apartmentCalendar created for two years." };
-//     } catch (error) {
-//         console.error("Error creating apartmentCalendar:", error);
-//         return { success: false, message: error.message };
-//     }
-// }
-//
-// async function createProviderCalendar(providerId) {
-//     // Requête SQL pour insérer les disponibilités pour le provider
-//     const query = `
-//         INSERT INTO providerAvailabilities (available, date, provider_id)
-//         SELECT true, gs.date, $1 as provider_id
-//         FROM generate_series(current_date, current_date + interval '2 years', '1 day') as gs(date)`;
-//
-//     try {
-//         // Exécuter la requête avec l'identifiant du provider
-//         await db.none(query, [providerId]);
-//         return { success: true, message: "apartmentCalendar created for provider for two years." };
-//     } catch (error) {
-//         console.error("Error creating apartmentCalendar for provider:", error);
-//         return { success: false, message: error.message };
-//     }
-// }
-//
-//
-// // Fonction asynchrone pour récupérer tous les emplacements
-// async function getAll() {
-//     // Exécution de la requête SQL pour récupérer tous les emplacements
-//     const res = await db.manyOrNone("SELECT * FROM apartments");
-//
-//     // Retourne un tableau vide si aucun emplacement n'est trouvé
-//     if (!res) {
-//         return [];
-//     }
-//
-//     // Retourne la liste des emplacements trouvés
-//     return res;
-// }
-//
-// // Fonction asynchrone pour mettre à jour un emplacement spécifique
-// async function updateOne(id, appartement) {
-//     // Création d'une chaîne de caractères pour la mise à jour des attributs
-//     const attrsStr = Object.keys(appartement)
-//         .map((k) => ` ${k} = $<${k}> `)
-//         .join(",");
-//
-//     // Exécution de la requête SQL pour mettre à jour l'emplacement et retourner l'objet modifié
-//     const modified = await db.oneOrNone(
-//         `UPDATE apartments SET ${attrsStr} WHERE appartements_id = ${id} RETURNING *;`,
-//         { id, ...appartement }
-//     );
-//
-//     // Retourne l'emplacement modifié
-//     return modified;
-// }
-//
-// // Fonction asynchrone pour supprimer un emplacement par son ID
-// async function deleteOne(id) {
-//     // Exécution de la requête SQL pour supprimer l'emplacement et retourner l'ID supprimé
-//     return await db.oneOrNone(
-//         "DELETE FROM apartments WHERE appartements_id=${id} RETURNING appartements_id;",
-//         { id }
-//     );
-// }
-//
-// // Exportation des fonctions pour utilisation dans d'autres parties du code
-// module.exports = { createOne, getOne, getAll, updateOne, deleteOne,createCalendar,createProviderCalendar, };
+// Importation du gestionnaire de base de données
+const db = require("../common/db_handler");
+
+async function getAllComments() {
+    try {
+        const result = await db.query('SELECT * FROM comments');
+        return result.rows;
+    } catch (error) {
+        console.error('Error fetching all comments:', error);
+        throw error;
+    }
+}
+
+async function getCommentsByApartmentId(apartmentId) {
+    try {
+        const result = await db.query('SELECT * FROM comments WHERE type = $1 AND entity_id = $2', ['apartment', apartmentId]);
+        return result.rows;
+    } catch (error) {
+        console.error(`Error fetching comments for apartment ID ${apartmentId}:`, error);
+        throw error;
+    }
+}
+
+async function getCommentsByServiceProviderId(serviceProviderId) {
+    try {
+        const result = await db.query('SELECT * FROM comments WHERE type = $1 AND entity_id = $2', ['serviceProvider', serviceProviderId]);
+        return result.rows;
+    } catch (error) {
+        console.error(`Error fetching comments for service provider ID ${serviceProviderId}:`, error);
+        throw error;
+    }
+}
+
+async function addComment(type, entityId, comment) {
+    try {
+        const result = await db.query('INSERT INTO comments (type, entity_id, comment) VALUES ($1, $2, $3) RETURNING *', [type, entityId, comment]);
+        return result.rows[0];
+    } catch (error) {
+        console.error('Error adding comment:', error);
+        throw error;
+    }
+}
+
+async function updateComment(id, comment) {
+    try {
+        const result = await db.query('UPDATE comments SET comment = $1, updated_at = CURRENT_TIMESTAMP WHERE comments_id = $2 RETURNING *', [comment, id]);
+        return result.rows[0];
+    } catch (error) {
+        console.error(`Error updating comment with ID ${id}:`, error);
+        throw error;
+    }
+}
+
+async function deleteComment(id) {
+    try {
+        const result = await db.query('DELETE FROM comments WHERE comments_id = $1 RETURNING *', [id]);
+        return result.rows[0];
+    } catch (error) {
+        console.error(`Error deleting comment with ID ${id}:`, error);
+        throw error;
+    }
+}
+
+module.exports = {
+    getAllComments,
+    getCommentsByApartmentId,
+    getCommentsByServiceProviderId,
+    addComment,
+    updateComment,
+    deleteComment
+};

@@ -1,7 +1,9 @@
+// serviceCalendar/service.js
 const {createAvailabilitySchema, updateAvailabilitySchema} = require("./model");
 const Repository = require("./repository");
 const {InvalidArgumentError} = require("../common/service_errors");
 
+// Fonction asynchrone pour créer des disponibilités pour un fournisseur de services
 async function createOne(calendar) {
     // Validation de la disponibilité avec le schéma défini
     const {value, error} = createAvailabilitySchema.validate(calendar);
@@ -12,7 +14,7 @@ async function createOne(calendar) {
     return await Repository.createAvailabilities(value.providerId);
 }
 
-// Fonction asynchrone pour récupérer une disponibilité par son identifiant
+// Fonction asynchrone pour récupérer les disponibilités d'un fournisseur de services par son identifiant
 async function getOne(id) {
     return await Repository.getById(id);
 }
@@ -22,11 +24,10 @@ async function getAll() {
     return await Repository.getAllAvailabilities();
 }
 
-// Fonction asynchrone pour mettre à jour une disponibilité existante
+// Fonction asynchrone pour mettre à jour des disponibilités existantes
 async function updateOne(schema) {
     // Validation de la disponibilité avec le schéma de mise à jour
     const {value, error} = updateAvailabilitySchema.validate(schema);
-
     if (error) {
         throw error;
     }
@@ -35,7 +36,7 @@ async function updateOne(schema) {
     return await Repository.updateAvailabilities(value.providerId, value.availabilities);
 }
 
-// Fonction asynchrone pour supprimer une disponibilité par son identifiant
+// Fonction asynchrone pour supprimer des disponibilités par l'identifiant du fournisseur de services
 async function deleteOne(id) {
     return await Repository.deleteAvailabilitiesByProviderId(id);
 }

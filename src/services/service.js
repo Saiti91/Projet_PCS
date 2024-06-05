@@ -1,6 +1,6 @@
 const {createServicesSchema, updateServicesSchema, createServicesTypeSchema} = require("./model");
 const Repository = require("./repository");
-const {calculateDistance} = require("./locationService");
+const {calculateDistance} = require("../common/middlewares/distanceCalculation_middleware");
 const {InvalidArgumentError, UnauthorizedError} = require("../common/service_errors");
 const {getGeoCoordinates} = require("../common/middlewares/gps_middleware");
 
@@ -27,31 +27,22 @@ async function createOne(serviceData) {
     return await Repository.createOne(value);
 }
 
-async function createOnetype(serviceData) {
-    // Valider le service avec un schéma Joi ou similaire
+async function createType(serviceData, apartmentFeature = null) {
+    // Valider le type de service avec un schéma Joi ou similaire
     const {value, error} = createServicesTypeSchema.validate(serviceData);
     if (error) {
         throw error;
     }
-    // Vérifier l'unicité du nom du service
-    const existingService = await Repository.getOneBy("name", value.name);
-    if (existingService) {
-        throw new InvalidArgumentError("This service name is already taken.");
+    // Vérifier l'unicité du nom du type de service
+    const existingServiceType = await Repository.getOneBy("name", value.name);
+    if (existingServiceType) {
+        throw new InvalidArgumentError("This service type name is already taken.");
     }
-    // Obtenir les coordonnées géographiques de l'adresse
-    const coordinates = await getGeoCoordinates(value.address);
-    if (!coordinates) {
-        throw new Error("Failed to geocode address.");
-    }
-    // Ajouter les coordonnées au service
-    value.latitude = coordinates.latitude;
-    value.longitude = coordinates.longitude;
-    // Créer le service dans la base de données
-    return await Repository.createOne(value);
+    // Créer le type de service dans la base de données
+    return await Repository.createType(value, apartmentFeature);
 }
 
-
-// fonction de récupération d'un service en fonction d'un id
+// Fonction de récupération d'un service en fonction de son ID
 async function getOne(id, issuer) {
     if (["provider"].includes(issuer.role) && issuer.id !== id) {
         throw new UnauthorizedError("You can only see your own service.");
@@ -95,23 +86,15 @@ async function getAll() {
 }
 
 async function getAppartementById(id) {
-    const services = await Repository.getAppartementById(id);
-    return services.map((service) => ({...service/*, password: "[redacted]" */}));
+    const appartement = await Repository.getAppartementById(id);
+    return {...appartement};
 }
 
-// fonction de changement d'information sur un utilisateur en fonction de son ID
+// Fonction de mise à jour d'un service en fonction de son ID
 async function updateOne(id, service, issuer) {
     if (["customer", "owner", "provider"].includes(issuer.role) && issuer.id !== id) {
         throw new UnauthorizedError("You cannot update services.");
     }
-
-    if (["customer", "owner", "provider"].includes(issuer.role) && service.role) {
-        throw new UnauthorizedError("You cannot update services.");
-    }
-
-    // if (issuer.role === "staff" && service.role === "admin") {
-    //     throw new UnauthorizedError("Only admins can create admins.");
-    // }
 
     const {value, error} = updateServicesSchema.validate(service);
     if (error) {
@@ -121,15 +104,14 @@ async function updateOne(id, service, issuer) {
     const newService = await Repository.updateOne(id, value);
 
     if (newService) {
-        return {...newService/*, password: "[redacted]"*/};
+        return {...newService};
     }
 
     return newService;
 }
 
-// Suppression d'un utilisateur
+// Fonction de suppression d'un service par son ID
 async function deleteOne(id, issuer) {
-
     if (["customer", "owner", "provider"].includes(issuer.role)) {
         throw new UnauthorizedError("You cannot delete a service.");
     }
@@ -138,6 +120,12 @@ async function deleteOne(id, issuer) {
 }
 
 module.exports = {
-    createOne, getOne, getAll, getServicesWithinRadius,
-    getAppartementById, updateOne, deleteOne, createOnetype
+    createOne,
+    createType,
+    getOne,
+    getAll,
+    getServicesWithinRadius,
+    getAppartementById,
+    updateOne,
+    deleteOne
 };

@@ -1,7 +1,7 @@
-const { Router } = require("express");
+const {Router} = require("express");
 const service = require("./service");
-const { Location, PartialLocation } = require("./model");
-const { NotFoundError } = require("../common/http_errors");
+const {Location, PartialLocation} = require("./model");
+const {NotFoundError} = require("../common/http_errors");
 const authorize = require("../common/middlewares/authorize_middleware");
 
 const controller = Router();
@@ -28,7 +28,7 @@ controller.get("/:id", (req, res, next) => {
         .catch((err) => next(err));
 });
 
-controller.post("/", authorize(["staff","admin"]), (req, res, next) => {
+controller.post("/", authorize(["staff", "admin"]), (req, res, next) => {
     service.createOne(req.body)
         .then((data) => {
             res.status(201).json(data);
@@ -50,7 +50,7 @@ controller.delete("/:id", authorize(["staff", "admin"]), (req, res, next) => {
         .catch((err) => next(err));
 });
 
-controller.patch("/:id", authorize(["staff", "provider","admin"]), (req, res, next) => {
+controller.patch("/:id", authorize(["staff", "provider", "admin"]), (req, res, next) => {
     service.updateOne(Number(req.params.id), req.body)
         .then((data) => {
             if (data === null) {

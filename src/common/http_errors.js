@@ -15,4 +15,4 @@ class NotFoundError extends HTTPError {
 }
 
 // Exportation des classes pour permettre leur utilisation dans d'autres parties de l'application
-module.exports = { HTTPError, NotFoundError };
+module.exports = {HTTPError, NotFoundError};

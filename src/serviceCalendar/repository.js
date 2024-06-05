@@ -1,5 +1,5 @@
 const db = require("../common/db_handler");
-const generateDates = require('/src/common/middlewares/generateDate');
+const generateDates = require('../common/middlewares/generateDate');
 
 // Créer des disponibilités pour un fournisseur de services
 async function createAvailabilities(providerId) {

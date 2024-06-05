@@ -24,5 +24,5 @@ const options = {
 const specs = swaggerJsdoc(options);
 
 // Exportation des spécifications pour leur utilisation dans d'autres parties de l'application
-module.exports = { specs };
+module.exports = {specs};
 

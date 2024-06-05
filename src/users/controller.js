@@ -1,4 +1,5 @@
-const { Router } = require("express");
+// users/controller.js
+const {Router} = require("express");
 const usersService = require("./service");
 const NotFoundError = require("../common/http_errors").NotFoundError;
 const authorize = require("../common/middlewares/authorize_middleware");
@@ -10,7 +11,7 @@ const controller = Router();
 //Vérifie le role staff et appel la méthode get
 controller.get(
     "/",
-    authorize(["staff","admin"]),
+    authorize(["staff", "admin"]),
     (_req, res, next) => {
         usersService.getAll()
             .then((data) => res.json(data))
@@ -21,7 +22,7 @@ controller.get(
 //Vérifie le role et appel la méthode GET en fonction de l'id
 controller.get(
     "/:id",
-    authorize(["staff", "customer", "owner","provider","admin"]),
+    authorize(["staff", "customer", "owner", "provider", "admin"]),
     (req, res, next) => {
         usersService.getOne(Number(req.params.id), {
             id: req.auth?.uid,
@@ -56,7 +57,7 @@ controller.post(
 //Vérification du role et suppression en fonction de paramettre (un saff peut delete tout le monde, un user peut se delete lui-même, etc..)
 controller.delete(
     "/:id",
-    authorize(["staff","admin"]),
+    authorize(["staff", "admin"]),
     (req, res, next) => {
         usersService.deleteOne(Number(req.params.id), {
             id: req.auth?.uid,
@@ -78,7 +79,7 @@ controller.delete(
 //Vérification du role et suppression en fonction de paramettre (un saff peut patch tout le monde, un user peut se patch lui-même, etc..)
 controller.patch(
     "/:id",
-    authorize(["owner", "customer", "staff","provider"]),
+    authorize(["owner", "customer", "staff", "provider"]),
     (req, res, next) => {
         usersService.updateOne(Number(req.params.id), req.body, {
             id: req.auth?.uid,
