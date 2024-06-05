@@ -1,67 +1,76 @@
 const db = require("../common/db_handler");
+const pgp = require("pg-promise")();
 
-//création d'un service
+// Création d'un service
 async function createOne(service) {
-    //Sépare les attributs de l'objet
-    const attributesString = Object.keys(service).join(",");
-    //Crée une string avec cet objet séparé
-    const valuesString = Object.keys(service)
-        .map((k) => `$<${k}>`)
-        .join(",");
-
+    // Utiliser pg-promise helpers pour gérer l'insertion
     return await db.one(
-        `INSERT INTO services(${attributesString}) VALUES(${valuesString}) RETURNING *;`,
-        service
+        pgp.helpers.insert(service, null, "servicesProviders") + " RETURNING *;"
     );
 }
 
-//Récupère un service en fonction de son ID
-async function getOne(id) {
-    return await db.oneOrNone("SELECT * FROM services WHERE services_id=${id}", { id });
+// Crée un type de service
+async function createType(type, apartmentFeature = null) {
+    // Utiliser pg-promise helpers pour gérer l'insertion
+    const createdType = await db.one(
+        pgp.helpers.insert(type, null, "serviceTypes") + " RETURNING *;"
+    );
+
+    if (apartmentFeature) {
+        await db.none(
+            `INSERT INTO serviceTypeToFeatures(serviceType_id, apartmentFeature)
+             VALUES ($1, $2);`,
+            [createdType.serviceTypes_id, apartmentFeature]
+        );
+    }
+
+    return createdType;
 }
 
-//Récupère un ou plusieurs services en fonction d'un attribut
+// Récupère un service en fonction de son ID
+async function getOne(id) {
+    return await db.oneOrNone("SELECT * FROM servicesProviders WHERE servicesProviders_id = $1", [id]);
+}
+
+// Récupère un ou plusieurs services en fonction d'un attribut
 async function getOneBy(attribute, value) {
     return await db.oneOrNone(
-        `SELECT * FROM services WHERE ${attribute} = ${value}`,
-        { value }
+        `SELECT *
+         FROM servicesProviders
+         WHERE ${attribute} = $1`, [value]
     );
 }
 
-
+// Récupère la longitude et latitude d'un appartement en fonction de son ID
 async function getAppartementById(id) {
     try {
-        const result = await db.oneOrNone('SELECT latitude, longitude FROM apartments WHERE appartements_id = $1', [id]);
-        return result;
+        return await db.oneOrNone(`
+                    SELECT address.longitude, address.latitude
+                    FROM address
+                             JOIN apartments ON apartments.address_id = address.address_id
+                    WHERE apartments.apartments_id = $1`,
+            [id]
+        );
     } catch (error) {
         console.error("Error fetching appartement details:", error);
         throw error;
     }
 }
 
-//Récupère tous les services
+// Récupère tous les services
 async function getAll() {
-    const res = await db.manyOrNone("SELECT * FROM services");
-    return res || [];
+    return await db.manyOrNone("SELECT * FROM servicesProviders");
 }
 
-//Update un utilisateur
-async function updateOne(id, user) {
-    const attrsStr = Object.keys(user)
-        .map((k) => ` ${k} = $<${k}> `)
-        .join(",");
-
-    const modified = await db.oneOrNone(
-        `UPDATE services SET ${attrsStr} WHERE services_id = ${id} RETURNING *;`,
-        { id, ...user }
-    );
-
-    return modified;
+// Update un service
+async function updateOne(id, service) {
+    const attrsStr = pgp.helpers.update(service, null, "servicesProviders") + ` WHERE servicesProviders_id = $1 RETURNING *;`;
+    return await db.oneOrNone(attrsStr, [id]);
 }
 
-//Délete un user par son ID
+// Supprime un service par son ID
 async function deleteOne(id) {
-    return await db.oneOrNone("DELETE FROM services WHERE services_id=${id} RETURNING services_id;", { id });
+    return await db.oneOrNone("DELETE FROM servicesProviders WHERE servicesProviders_id = $1 RETURNING servicesProviders_id;", [id]);
 }
 
-module.exports = { createOne, getOne, getAll,getAppartementById, updateOne, deleteOne, getOneBy };
+module.exports = {createOne, createType, getOne, getAll, getAppartementById, updateOne, deleteOne, getOneBy};

@@ -1,5 +1,5 @@
 // Importation de la classe d'erreur personnalisée pour les situations non autorisées
-const { UnauthorizedError } = require("../service_errors");
+const {UnauthorizedError} = require("../service_errors");
 
 // Définition d'une fonction qui prend un tableau de rôles autorisés
 function authorize(roles) {

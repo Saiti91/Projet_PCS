@@ -1,9 +1,9 @@
 // Importation des classes d'erreur personnalisées et de la bibliothèque Joi
-const { UnauthorizedError } = require("../service_errors");
-const { HTTPError } = require("../http_errors");
-const { ValidationError } = require("joi");
-const { InvalidArgumentError, AuthError } = require("../service_errors");
-const { UnauthorizedError: JWTUnauthorizedError } = require("express-jwt");
+const {UnauthorizedError} = require("../service_errors");
+const {HTTPError} = require("../http_errors");
+const {ValidationError} = require("joi");
+const {InvalidArgumentError, AuthError} = require("../service_errors");
+const {UnauthorizedError: JWTUnauthorizedError} = require("express-jwt");
 
 // Définition du middleware de gestion des erreurs
 function errorHandlingMiddleware(err, _req, res, next) {

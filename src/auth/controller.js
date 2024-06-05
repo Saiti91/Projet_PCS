@@ -1,5 +1,5 @@
 // Importation du routeur d'Express
-const { Router } = require("express");
+const {Router} = require("express");
 // Importation du service d'authentification qui gère la logique métier spécifique à l'authentification
 const authService = require("./service");
 

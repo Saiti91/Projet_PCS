@@ -7,8 +7,8 @@ const createApartmentSchema = Joi.object({
     owner_id: Joi.number().integer().positive().optional(),
     surface: Joi.number().integer().positive().required(), // Superficie de l'emplacement, en m², doit être un entier positif
     address: Joi.string().required(), // Adresse de l'emplacement, doit être une chaîne de caractères non vide
-    longitude : Joi.number().optional(),
-    latitude : Joi.number().optional(),
+    longitude: Joi.number().optional(),
+    latitude: Joi.number().optional(),
     capacity: Joi.number().integer().positive().required(),// Capacité d'accueil de l'emplacement, en nombre de personnes, doit être un entier positif
     apartmentsType: Joi.string().required(), // Type de l'emplacement, doit être une chaîne de caractères non vide
     garden: Joi.bool().required(), // Jardin de l'emplacement, doit être un booléen
@@ -26,8 +26,8 @@ const updateApartmentSchema = Joi.object({
     owner_id: Joi.number().integer().positive().optional(),
     surface: Joi.number().integer().positive().optional(), // Superficie de l'emplacement, optionnelle
     address: Joi.string().optional(), // Adresse de l'emplacement, optionnelle
-    longitude : Joi.number().optional(),
-    latitude : Joi.number().optional(),
+    longitude: Joi.number().optional(),
+    latitude: Joi.number().optional(),
     capacity: Joi.number().integer().positive().optional(), // Capacité d'accueil, optionnelle
     type: Joi.string().optional(), // Type de l'emplacement, doit être une chaîne de caractères non vide
     garden: Joi.bool().optional(), // Jardin de l'emplacement, doit être un booléen

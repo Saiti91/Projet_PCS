@@ -175,18 +175,17 @@ async function updateOne(id, apartment) {
 
     try {
         // Exécution de la requête SQL pour mettre à jour l'emplacement et retourner l'objet modifié
-        const modified = await db.oneOrNone(
+        // Retourne l'emplacement modifié ou null si aucun appartement n'a été modifié
+        return await db.oneOrNone(
             `UPDATE apartments
              SET ${attrsStr}
              WHERE apartments_id = $${values.length + 1} RETURNING *;`, [...values, id]);
-
-        // Retourne l'emplacement modifié ou null si aucun appartement n'a été modifié
-        return modified;
     } catch (error) {
         console.error(`Failed to update apartment with ID ${id}:`, error);
         throw error;
     }
 }
+
 // Fonction asynchrone pour supprimer un emplacement par son ID
 async function deleteOne(id) {
     try {

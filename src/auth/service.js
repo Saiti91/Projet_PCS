@@ -1,15 +1,15 @@
 // Importation des schémas de validation et du répertoire utilisateur pour accéder à la base de données
-const { loginSchema, registerSchema } = require("./model");
+const {loginSchema, registerSchema} = require("./model");
 const userRepository = require("../users/repository");
 // Importation des erreurs personnalisées pour gérer des situations spécifiques
-const { AuthError, InvalidArgumentError } = require("../common/service_errors");
+const {AuthError, InvalidArgumentError} = require("../common/service_errors");
 // Importation de la fonction pour générer des jetons JWT
 const generateJWT = require("../common/jwt_handler");
 
 // Fonction asynchrone pour la connexion des utilisateurs
 async function login(loginForm) {
     // Validation du formulaire de connexion avec le schéma prévu
-    const { value, error } = loginSchema.validate(loginForm);
+    const {value, error} = loginSchema.validate(loginForm);
     // Lancement d'une erreur si la validation échoue
     if (error) {
         throw error;
@@ -33,7 +33,7 @@ async function login(loginForm) {
 // Fonction asynchrone pour l'enregistrement des utilisateurs
 async function register(user) {
     // Validation du formulaire d'enregistrement avec le schéma prévu
-    const { value, error } = registerSchema.validate(user);
+    const {value, error} = registerSchema.validate(user);
 
     // Lancement d'une erreur si la validation échoue
     if (error) {
@@ -46,8 +46,8 @@ async function register(user) {
     }
 
     // Création de l'utilisateur avec le rôle "customer" et retour de l'utilisateur créé
-    return await userRepository.createOne({ ...value });
+    return await userRepository.createOne({...value});
 }
 
 // Exportation des fonctions pour utilisation dans d'autres parties de l'application
-module.exports = { login, register };
+module.exports = {login, register};

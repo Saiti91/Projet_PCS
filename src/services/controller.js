@@ -1,17 +1,15 @@
-const { Router } = require("express");
+const {Router} = require("express");
 const Service = require("./service");
-const getAppartement = require("../apartments/repository");
 const NotFoundError = require("../common/http_errors").NotFoundError;
+const InternalServerError = require("../common/http_errors");
 const authorize = require("../common/middlewares/authorize_middleware");
 
 const controller = Router();
 
-//TODO: ADD pdf and service completion
-
-//Vérifie le role staff et appel la méthode get
+// Route GET pour récupérer tous les services
 controller.get(
     "/",
-    authorize(["staff", "customer", "owner","provider","admin"]),
+    authorize(["staff", "customer", "owner", "provider", "admin"]),
     (_req, res, next) => {
         Service.getAll()
             .then((data) => res.json(data))
@@ -19,10 +17,10 @@ controller.get(
     },
 );
 
-//Vérifie le role et appel la méthode GET en fonction de l'id
+// Route GET pour récupérer un service spécifique par ID
 controller.get(
     "/:id",
-    authorize(["staff", "customer", "owner","provider"]),
+    authorize(["staff", "customer", "owner", "provider"]),
     (req, res, next) => {
         Service.getOne(Number(req.params.id), {
             id: req.auth?.uid,
@@ -30,18 +28,15 @@ controller.get(
         })
             .then((data) => {
                 if (data === null) {
-                    throw new NotFoundError(
-                        `Could not find service with id ${req.params.id}`
-                    );
+                    throw new NotFoundError(`Could not find service with id ${req.params.id}`);
                 }
-
                 res.json(data);
             })
             .catch((err) => next(err));
     },
 );
 
-
+// Route GET pour récupérer les services disponibles autour d'un appartement
 controller.get(
     "/appartements/:appartementId/services",
     authorize(["staff", "customer", "owner", "provider"]),
@@ -54,7 +49,7 @@ controller.get(
             }
 
             const maxDistance = Number(process.env.PROVIDER_RANGE_KM || 10); // Default to 10 km if not set
-            const { latitude, longitude } = appartement;
+            const {latitude, longitude} = appartement;
 
             const services = await Service.getServicesWithinRadius(latitude, longitude, maxDistance);
             res.json(services);
@@ -65,10 +60,10 @@ controller.get(
     }
 );
 
-//Vérifie le role Staff et appel la méthode Create user
+// Route POST pour créer un nouveau service
 controller.post(
     "/",
-    authorize(["staff","admin"]),
+    authorize(["staff", "admin"]),
     (req, res, next) => {
         Service.createOne(req.body)
             .then((data) => {
@@ -78,11 +73,13 @@ controller.post(
     },
 );
 
+// Route POST pour créer un nouveau type de service
 controller.post(
     "/type",
-    authorize(["staff","admin"]),
+    authorize(["staff", "admin"]),
     (req, res, next) => {
-        Service.createOne(req.body)
+        const {apartmentFeature, ...typeData} = req.body;
+        Service.createType(typeData, apartmentFeature)
             .then((data) => {
                 res.status(201).json(data);
             })
@@ -90,10 +87,10 @@ controller.post(
     },
 );
 
-//Vérification du role et suppression en fonction de paramettre (un saff peut delete tout le monde, un user peut se delete lui-même, etc..)
+// Route DELETE pour supprimer un service par ID
 controller.delete(
     "/:id",
-    authorize(["owner", "customer", "staff","provider"]),
+    authorize(["owner", "customer", "staff", "provider"]),
     (req, res, next) => {
         Service.deleteOne(Number(req.params.id), {
             id: req.auth?.uid,
@@ -101,21 +98,18 @@ controller.delete(
         })
             .then((id) => {
                 if (id === null) {
-                    throw new NotFoundError(
-                        `Could not find service with id ${req.params.id}`
-                    );
+                    throw new NotFoundError(`Could not find service with id ${req.params.id}`);
                 }
-
-                res.status(204).json();
+                res.status(204).send();
             })
             .catch((err) => next(err));
     },
 );
 
-//Vérification du role et suppression en fonction de paramettre (un saff peut patch tout le monde, un user peut se patch lui-même, etc..)
+// Route PATCH pour mettre à jour un service spécifique par ID
 controller.patch(
     "/:id",
-    authorize(["owner", "customer", "staff","provider"]),
+    authorize(["owner", "customer", "staff", "provider"]),
     (req, res, next) => {
         Service.updateOne(Number(req.params.id), req.body, {
             id: req.auth?.uid,
@@ -123,9 +117,7 @@ controller.patch(
         })
             .then((data) => {
                 if (data === null) {
-                    throw new NotFoundError(
-                        `Could not find service with id ${req.params.id}`
-                    );
+                    throw new NotFoundError(`Could not find service with id ${req.params.id}`);
                 }
                 res.status(200).json(data);
             })

@@ -1,13 +1,14 @@
-const { createUserSchema, updateUserSchema } = require("./model");
+// users/service.js
+const {createUserSchema, updateUserSchema} = require("./model");
 const Repository = require("./repository");
-const { InvalidArgumentError, UnauthorizedError } = require("../common/service_errors");
+const {InvalidArgumentError, UnauthorizedError} = require("../common/service_errors");
 const calendar = require("../apartmentCalendar/repository");
 
 
 // Fonction de création d'utilisateur
 async function createOne(user) {
     // Validation de l'utilisateur avec un schéma Joi ou similaire
-    const { value, error } = createUserSchema.validate(user);
+    const {value, error} = createUserSchema.validate(user);
     if (error) {
         throw error;
     }
@@ -27,34 +28,34 @@ async function createOne(user) {
     }
 
     // Renvoi de l'utilisateur nouvellement créé avec le mot de passe masqué
-    return { ...newUser, password: "[redacted]" };
+    return {...newUser, password: "[redacted]"};
 }
 
 // fonction de récupération d'un utilisateur en fonction d'un id
 async function getOne(id, issuer) {
-    if (["customer", "owner","provider"].includes(issuer.role) && issuer.id !== id) {
+    if (["customer", "owner", "provider"].includes(issuer.role) && issuer.id !== id) {
         throw new UnauthorizedError("You can only see your own account.");
     }
 
     const user = await Repository.getOne(id);
     if (user) {
-        return { ...user, password: "[redacted]" };
+        return {...user, password: "[redacted]"};
     } else return user;
 }
 
 //fonction de récupération de tous les utilisateurs
 async function getAll() {
     const users = await Repository.getAll();
-    return users.map((user) => ({ ...user, password: "[redacted]" }));
+    return users.map((user) => ({...user, password: "[redacted]"}));
 }
 
 // fonction de changement d'information sur un utilisateur en fonction de son ID
 async function updateOne(id, user, issuer) {
-    if (["customer", "owner","provider"].includes(issuer.role) && issuer.id !== id) {
+    if (["customer", "owner", "provider"].includes(issuer.role) && issuer.id !== id) {
         throw new UnauthorizedError("You can only update your own account.");
     }
 
-    if (["customer", "owner","provider"].includes(issuer.role) && user.role) {
+    if (["customer", "owner", "provider"].includes(issuer.role) && user.role) {
         throw new UnauthorizedError("You cannot change your role.");
     }
 
@@ -69,7 +70,7 @@ async function updateOne(id, user, issuer) {
         throw new UnauthorizedError("Staff cannot downgrade admins.");
     }
 
-    const { value, error } = updateUserSchema.validate(user);
+    const {value, error} = updateUserSchema.validate(user);
     if (error) {
         throw error;
     }
@@ -81,7 +82,7 @@ async function updateOne(id, user, issuer) {
     const newUser = await Repository.updateOne(id, value);
 
     if (newUser) {
-        return { ...newUser, password: "[redacted]" };
+        return {...newUser, password: "[redacted]"};
     }
 
     return newUser;
@@ -89,8 +90,8 @@ async function updateOne(id, user, issuer) {
 
 // Suppression d'un utilisateur
 async function deleteOne(id, issuer) {
-    
-    if (["customer", "owner","provider"].includes(issuer.role) && issuer.id !== id) {
+
+    if (["customer", "owner", "provider"].includes(issuer.role) && issuer.id !== id) {
         throw new UnauthorizedError("You can only delete your own account.");
     }
 
@@ -101,4 +102,4 @@ async function deleteOne(id, issuer) {
     return await Repository.deleteOne(id);
 }
 
-module.exports = { createOne, getOne, getAll, updateOne, deleteOne };
+module.exports = {createOne, getOne, getAll, updateOne, deleteOne};
