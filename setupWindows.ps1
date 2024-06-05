@@ -11,7 +11,8 @@ docker run --name PCS_postgres -e POSTGRES_PASSWORD=password -d -v ${PWD}/databa
 
 # Vérifier si Node.js est installé et l'installer si ce n'est pas le cas
 $nodeInstalled = Get-Command node -ErrorAction SilentlyContinue
-if (-not $nodeInstalled) {
+if (-not $nodeInstalled)
+{
     Write-Host "Node.js n'est pas installé. Installation de Node.js..."
     Set-ExecutionPolicy Bypass -Scope Process -Force
     Invoke-WebRequest -useb get.scoop.sh | Invoke-Expression
