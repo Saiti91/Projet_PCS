@@ -5,13 +5,16 @@
 // Confirmation et/ou ajout de commentaire ou photo de la part du client à son arrivée
 // Eventuel état des lieux de sortie de la part du client
 // Etat des lieux de sortie de la part de PCS
+//  En Cours
 // -
 // 2.
 // Système de ticket disponible pour les clients, les propriétaires et les fournisseurs
 // qui contiendra un formulaire de contact avec différente option en fonction de la raison de contacte
+//  En Cours
 // -
 // 3.
 // Ajouter un système de facturation pour les propriétaires et les fournisseurs
+//  En cours
 // -
 // 4.
 // Système de formulaire d'intervention pour les fournisseurs de services
