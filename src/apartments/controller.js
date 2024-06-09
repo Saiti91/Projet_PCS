@@ -1,15 +1,14 @@
 const {Router} = require("express");
-const appartementsServices = require("./service");
+const apartmentsServices = require("./service");
 const {NotFoundError} = require("../common/http_errors");
 const authorize = require("../common/middlewares/authorize_middleware");
 const {createLocationSchema, updateLocationSchema} = require("./model");
-const validate = require("../common/middlewares/authorize_middleware");
 
 const controller = Router();
 
 controller.get("/", async (req, res, next) => {
     try {
-        const data = await appartementsServices.getAll();
+        const data = await apartmentsServices.getAll();
         res.json(data);
     } catch (err) {
         next(err);
@@ -18,7 +17,7 @@ controller.get("/", async (req, res, next) => {
 
 controller.get("/carousel", async (req, res, next) => {
     try {
-        const data = await appartementsServices.getCarousel();
+        const data = await apartmentsServices.getCarousel();
         res.json(data);
     } catch (err) {
         next(err);
@@ -27,7 +26,7 @@ controller.get("/carousel", async (req, res, next) => {
 
 controller.get("/:id", async (req, res, next) => {
     try {
-        const data = await appartementsServices.getOne(Number(req.params.id));
+        const data = await apartmentsServices.getOne(Number(req.params.id));
         if (data === null) {
             throw new NotFoundError(`Could not find location with id ${req.params.id}`);
         }
@@ -39,7 +38,7 @@ controller.get("/:id", async (req, res, next) => {
 
 controller.post("/", authorize(["staff", "admin"]), validate(createLocationSchema), async (req, res, next) => {
     try {
-        const data = await appartemezntsServices.createOne(req.body);
+        const data = await apartmentsServices.createOne(req.body);
         res.status(201).json(data);
     } catch (err) {
         next(err);
@@ -48,7 +47,7 @@ controller.post("/", authorize(["staff", "admin"]), validate(createLocationSchem
 
 controller.delete("/:id", authorize(["staff", "owner", "admin"]), async (req, res, next) => {
     try {
-        const id = await appartementsServices.deleteOne(Number(req.params.id));
+        const id = await apartmentsServices.deleteOne(Number(req.params.id));
         if (id === null) {
             throw new NotFoundError(`Could not find location with id ${req.params.id}`);
         }
@@ -60,7 +59,7 @@ controller.delete("/:id", authorize(["staff", "owner", "admin"]), async (req, re
 
 controller.patch("/:id", authorize(["staff", "owner"]), validate(updateLocationSchema), async (req, res, next) => {
     try {
-        const data = await appartementsServices.updateOne(Number(req.params.id), req.body);
+        const data = await apartmentsServices.updateOne(Number(req.params.id), req.body);
         if (data === null) {
             throw new NotFoundError(`Could not find location with id ${req.params.id}`);
         }

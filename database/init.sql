@@ -201,11 +201,13 @@ CREATE TABLE apartmentAvailabilities
 -- Factures
 CREATE TABLE invoices
 (
-    invoice_id  serial PRIMARY KEY,
-    provider_id int REFERENCES servicesProviders (servicesProviders_id) ON DELETE CASCADE,
-    amount      numeric(10, 2),
-    issued_date date    DEFAULT CURRENT_DATE,
-    paid        boolean DEFAULT false
+    invoice_id     serial PRIMARY KEY,
+    user_id        int REFERENCES users (users_id) ON DELETE CASCADE,
+    provider_id    int REFERENCES servicesProviders (servicesProviders_id) ON DELETE CASCADE,
+    reservation_id int REFERENCES reservations (reservations_id) ON DELETE CASCADE,
+    amount         numeric(10, 2),
+    issued_date    date    DEFAULT CURRENT_DATE,
+    paid           boolean DEFAULT false
 );
 
 -- stockage des tickets
@@ -221,4 +223,26 @@ CREATE TABLE tickets
     assigned_to        int REFERENCES users (users_id),
     priority           citext CHECK (priority IN ('low', 'medium', 'high')),
     category           citext
+);
+
+-- état des lieux
+CREATE TABLE inventory
+(
+    inventory_id   SERIAL PRIMARY KEY,
+    reservation_id INT         NOT NULL,
+    type           VARCHAR(50) NOT NULL,
+    description    TEXT,
+    comments       TEXT,
+    status         VARCHAR(50) NOT NULL DEFAULT 'pending',
+    created_at     TIMESTAMP            DEFAULT CURRENT_TIMESTAMP,
+    updated_at     TIMESTAMP            DEFAULT CURRENT_TIMESTAMP
+);
+
+-- photos des états des lieux
+CREATE TABLE inventory_pictures
+(
+    id           SERIAL PRIMARY KEY,
+    inventory_id INT  NOT NULL REFERENCES inventory (inventory_id),
+    path         TEXT NOT NULL,
+    created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );

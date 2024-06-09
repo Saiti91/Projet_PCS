@@ -1,40 +1,53 @@
-require('dotenv').config();
+const db = require("../common/db_handler");
 
-// Importation du module pg-promise, une bibliothèque pour gérer la connexion à PostgreSQL
-const pgp = require("pg-promise")({
-    // Activation du monitoring de requête pour le débogage
-    query(e) {
-        console.log('QUERY:', e.query);
-    },
-    error(err, e) {
-        if (e.query) {
-            console.error('QUERY:', e.query);
-        }
-        console.error('ERROR:', err);
-    }
-});
+const createInspection = async (inspection) => {
+    const { reservationId, description, photos, type } = inspection;
 
-// Configuration pour éviter les affichages de mot de passe dans les logs
-const connectionOptions = {
-    user: process.env.DB_USER,
-    password: process.env.DB_PASS,
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT, // Assurez-vous que le nom de la variable d'environnement est correct
-    database: process.env.DB_DATABASE,
+    return db.tx(async t => {
+        const result = await t.one(
+            "INSERT INTO inventory (reservation_id, description, type, status) VALUES ($1, $2, $3, 'pending') RETURNING *",
+            [reservationId, description, type]
+        );
+
+        const inspectionId = result.inventory_id;
+
+        const photoQueries = photos.map(photo =>
+            t.none("INSERT INTO inventory_pictures (inventory_id, path) VALUES ($1, $2)", [inspectionId, photo])
+        );
+
+        await t.batch(photoQueries);
+
+        return result;
+    });
 };
 
-// Création d'une instance de la connexion à la base de données
-const db = pgp(connectionOptions);
+const updateInspection = async (inspectionId, updates) => {
+    const { comments, photos, status } = updates;
 
-// Test de la connexion pour s'assurer que tout fonctionne correctement
-db.connect()
-    .then(obj => {
-        console.log("Connexion à la base de données réussie");
-        obj.done(); // libère la connexion
-    })
-    .catch(error => {
-        console.error("Échec de la connexion à la base de données:", error.message);
+    return db.tx(async t => {
+        await t.none(
+            "UPDATE inventory SET comments = $1, status = $2 WHERE inventory_id = $3",
+            [comments, status, inspectionId]
+        );
+
+        if (photos && photos.length > 0) {
+            const photoQueries = photos.map(photo =>
+                t.none("INSERT INTO inventory_pictures (inventory_id, path) VALUES ($1, $2)", [inspectionId, photo])
+            );
+
+            await t.batch(photoQueries);
+        }
+
+        return await t.one("SELECT * FROM inventory WHERE inventory_id = $1", [inspectionId]);
     });
+};
 
-// Exportation de l'objet db pour permettre son utilisation dans d'autres parties de l'application
-module.exports = db;
+const getInspectionById = async (inspectionId) => {
+    return db.oneOrNone("SELECT * FROM inventory WHERE inventory_id = $1", [inspectionId]);
+};
+
+module.exports = {
+    createInspection,
+    updateInspection,
+    getInspectionById,
+};
