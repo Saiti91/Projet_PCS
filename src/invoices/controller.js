@@ -1,5 +1,5 @@
 const { Router } = require("express");
-const invoiceServices = require("../services/invoiceService");
+const invoiceServices = require("./service");
 const { NotFoundError } = require("../common/http_errors");
 const authorize = require("../common/middlewares/authorize_middleware");
 

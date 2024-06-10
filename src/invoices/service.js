@@ -1,5 +1,5 @@
-const { createInvoiceSchema, updateInvoiceSchema } = require("../models/invoice");
-const invoiceRepository = require("../repositories/invoiceRepository");
+const { createInvoiceSchema, updateInvoiceSchema } = require("./model");
+const invoiceRepository = require("./repository");
 const { InvalidArgumentError } = require("../common/service_errors");
 
 async function createInvoice(data) {

@@ -1,5 +1,5 @@
 const db = require("../common/db_handler");
-const generateDates = require('/src/common/middlewares/generateDate')
+const generateDates = require('../common/middlewares/generateDate')
 
 async function createAvailabilities(apartmentId) {
     const dates = generateDates(720); // Generate 720 dates from today
