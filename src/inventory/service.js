@@ -1,6 +1,6 @@
-const { createInventorySchema, confirmArrivalSchema, createExitInspectionSchema } = require("./model");
 const inventoryRepository = require("./repository");
 const { InvalidArgumentError } = require("../common/service_errors");
+const { createInventorySchema, confirmArrivalSchema, createExitInspectionSchema } = require("./model");
 
 async function createPreArrivalInspection(data) {
     const { value, error } = createInventorySchema.validate(data);

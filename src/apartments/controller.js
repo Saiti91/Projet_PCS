@@ -1,8 +1,7 @@
-const {Router} = require("express");
+const { Router } = require("express");
 const apartmentsServices = require("./service");
-const {NotFoundError} = require("../common/http_errors");
+const { NotFoundError } = require("../common/http_errors");
 const authorize = require("../common/middlewares/authorize_middleware");
-const {createLocationSchema, updateLocationSchema} = require("./model");
 
 const controller = Router();
 
@@ -36,7 +35,7 @@ controller.get("/:id", async (req, res, next) => {
     }
 });
 
-controller.post("/", authorize(["staff", "admin"]), validate(createLocationSchema), async (req, res, next) => {
+controller.post("/", authorize(["staff", "admin"]), async (req, res, next) => {
     try {
         const data = await apartmentsServices.createOne(req.body);
         res.status(201).json(data);
@@ -57,7 +56,7 @@ controller.delete("/:id", authorize(["staff", "owner", "admin"]), async (req, re
     }
 });
 
-controller.patch("/:id", authorize(["staff", "owner"]), validate(updateLocationSchema), async (req, res, next) => {
+controller.patch("/:id", authorize(["staff", "owner"]), async (req, res, next) => {
     try {
         const data = await apartmentsServices.updateOne(Number(req.params.id), req.body);
         if (data === null) {

@@ -35,7 +35,7 @@ app.use(authMiddleware);
 // Regex
 app.use("/*/[1-9]+$", idParamGuard);
 
-//Récupère la requete et délivre un message de base si celle ci ne contient pas d'argument
+//Récupère la requète et délivre un message de base si celle-ci ne contient pas d'argument
 app.get("/", (_req, res) => {
     res.json({
         message: "Welcome to PCS API!",

@@ -5,7 +5,6 @@ const createInvoiceSchema = Joi.object({
     providerId: Joi.number().integer().positive().optional(),
     reservationId: Joi.number().integer().positive().optional(),
     amount: Joi.number().positive().required(),
-    issuedDate: Joi.date().default(() => new Date(), 'current date'),
     paid: Joi.boolean().default(false)
 });
 
