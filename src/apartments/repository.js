@@ -1,32 +1,50 @@
-// Importation du gestionnaire de base de données
 const db = require("../common/db_handler");
 const calendar = require("../apartmentCalendar/repository");
 
 async function createOne(apartment) {
-    const {imagePaths} = apartment;
+    const { imagePaths, address } = apartment;
+
+    if (!apartment.ownerEmail) {
+        throw new Error("Owner email is required.");
+    }
+
+    if (!address || !address.street || !address.town) {
+        throw new Error("Address information is incomplete.");
+    }
+
     delete apartment.imagePaths;
+    delete apartment.address;
 
     const owner = await db.oneOrNone("SELECT users_id FROM users WHERE email=$1", [apartment.ownerEmail]);
     if (!owner) {
         throw new Error("No user found with the provided email.");
     }
     delete apartment.ownerEmail;
-
-    const attributesString = Object.keys(apartment).join(",");
-    const valuesString = Object.keys(apartment)
-        .map(k => `$<${k}>`)
-        .join(",");
+    apartment.owner_id = owner.users_id;
 
     try {
         return await db.tx(async t => {
+            const newAddress = await t.one(
+                `INSERT INTO address (longitude, latitude, number, addressComplement, building, apartmentNumber, street, CP, town)
+                 VALUES ($<longitude>, $<latitude>, $<number>, $<addressComplement>, $<building>, $<apartmentNumber>, $<street>, $<CP>, $<town>)
+                     RETURNING address_id`,
+                address
+            );
+
+            apartment.address_id = newAddress.address_id;
+            console.log(apartment.address_id);
+            const attributesString = Object.keys(apartment).join(",");
+            const valuesString = Object.keys(apartment)
+                .map(k => `$<${k}>`)
+                .join(",");
+
             const newApartment = await t.one(
                 `INSERT INTO apartments(${attributesString})
                  VALUES (${valuesString})
-                 RETURNING apartments_id, owner_id;`,
+                     RETURNING apartments_id, owner_id;`,
                 apartment
             );
-
-            // Insert the image paths
+            console.log(newApartment.apartments_id);
             if (imagePaths && imagePaths.length > 0) {
                 const insertImageQueries = imagePaths.map(path => {
                     return t.none(
@@ -38,30 +56,66 @@ async function createOne(apartment) {
 
                 await t.batch(insertImageQueries);
             }
+
             await calendar.createAvailabilities(newApartment.apartments_id);
 
             return newApartment;
         });
     } catch (error) {
         console.error("Failed to create apartment:", error);
-        throw error;
+        throw new Error("Failed to create apartment.");
     }
+}
+
+async function getApartmentTypeIdByName(name) {
+    return db.oneOrNone("SELECT apartmentsTypes_id FROM apartmentsTypes WHERE name = $1", [name]);
 }
 
 // Fonction asynchrone pour récupérer un emplacement spécifique par son ID
 async function getOne(id) {
+    if (!id) {
+        throw new Error("Apartment ID is required.");
+    }
+
     try {
         const apartmentQuery = `
-            SELECT aparts.*,
-                   ARRAY_AGG(apartImage.path)                            AS images,
+            SELECT a.apartments_id,
+                   a.created_at,
+                   a.surface,
+                   addr.street,
+                   addr.building,
+                   addr.apartmentNumber,
+                   addr.number,
+                   addr.addressComplement,
+                   addr.CP,
+                   addr.town,
+                   a.capacity,
+                   a.apartmentsType_id,
+                   at.name                     AS apartment_type,
+                   a.numberOfRoom,
+                   a.price,
+                   ARRAY_AGG(DISTINCT ai.path) AS images,
+                   ARRAY_AGG(DISTINCT af.name) AS features,
+                   u.email                     AS owner_email,
                    JSON_AGG(appartCalendar ORDER BY appartCalendar.date) AS calendar
-            FROM apartments aparts
+            FROM apartments a
+                     JOIN
+                 address addr ON a.address_id = addr.address_id
+                     JOIN
+                 users u ON a.owner_id = u.users_id
                      LEFT JOIN
-                 apartmentsImage apartImage ON aparts.apartments_id = apartImage.apartment_id
+                 apartmentsImage ai ON a.apartments_id = ai.apartment_id
                      LEFT JOIN
-                 apartmentAvailabilities appartCalendar ON aparts.apartments_id = appartCalendar.apartment_id
-            WHERE aparts.apartments_id = $1
-            GROUP BY aparts.apartments_id
+                 apartmentToFeatures atf ON a.apartments_id = atf.apartment_id
+                     LEFT JOIN
+                 apartmentFeatures af ON atf.feature_id = af.feature_id
+                     LEFT JOIN
+                 apartmentsTypes at ON a.apartmentsType_id = at.apartmentsTypes_id
+                     LEFT JOIN
+                 apartmentAvailabilities appartCalendar ON a.apartments_id = appartCalendar.apartment_id
+            WHERE a.apartments_id = $1
+            GROUP BY a.apartments_id, addr.street, addr.building, addr.apartmentNumber, addr.number,
+                     addr.addressComplement, addr.CP, addr.town, at.name, u.email
         `;
 
         const apartment = await db.oneOrNone(apartmentQuery, [id]);
@@ -77,12 +131,8 @@ async function getOne(id) {
     }
 }
 
-//TODO: Restructure request
-
 async function getAll() {
     try {
-        // Exécuter la requête SQL pour obtenir tous les appartements avec les informations de l'adresse,
-        // du type d'appartement, des caractéristiques et des images
         const apartments = await db.manyOrNone(`
             SELECT a.apartments_id,
                    a.created_at,
@@ -117,9 +167,9 @@ async function getAll() {
                  apartmentsTypes at ON a.apartmentsType_id = at.apartmentsTypes_id
             GROUP BY a.apartments_id, addr.street, addr.building, addr.apartmentNumber, addr.number,
                      addr.addressComplement, addr.CP, addr.town, at.name, u.email
+            LIMIT 100;
         `);
 
-        // Retourner la liste des appartements trouvés ou un tableau vide si aucun appartement n'est trouvé
         return apartments || [];
     } catch (error) {
         console.error("Failed to retrieve apartments:", error);
@@ -129,7 +179,6 @@ async function getAll() {
 
 async function getCarousel() {
     try {
-        // Exécuter la requête SQL pour obtenir un carrousel d'appartements aléatoires avec la première image de chaque appartement
         const res = await db.manyOrNone(`
             SELECT a.apartments_id,
                    a.name,
@@ -149,48 +198,91 @@ async function getCarousel() {
             LIMIT 10;
         `);
 
-        // Retourner un tableau vide si aucun appartement n'est trouvé
-        if (!res) {
-            return [];
-        }
-
-        // Retourner la liste des appartements trouvés
-        return res;
+        return res || [];
     } catch (error) {
         console.error("Failed to retrieve carousel apartments:", error);
         throw error;
     }
 }
 
+async function getApartmentImages(apartmentId) {
+    if (!apartmentId) {
+        throw new Error("Apartment ID is required.");
+    }
 
-// Fonction asynchrone pour mettre à jour un emplacement spécifique
+    try {
+        const images = await db.manyOrNone(`
+            SELECT ai.path
+            FROM apartmentsImage ai
+            WHERE ai.apartment_id = $1
+            ORDER BY ai.image_id;
+        `, [apartmentId]);
+
+        return images || [];
+    } catch (error) {
+        console.error(`Failed to retrieve images for apartment ID ${apartmentId}:`, error);
+        throw error;
+    }
+}
+
 async function updateOne(id, apartment) {
-    // Création d'une chaîne de caractères pour la mise à jour des attributs
-    const attrsStr = Object.keys(apartment)
+    if (!id || !apartment) {
+        throw new Error("Apartment ID and update data are required.");
+    }
+
+    const { address } = apartment;
+    delete apartment.address;
+
+    const apartmentAttrsStr = Object.keys(apartment)
         .map((k, index) => `${k} = $${index + 1}`)
         .join(", ");
 
-    // Préparer les valeurs pour les paramètres SQL
-    const values = Object.values(apartment);
+    const apartmentValues = Object.values(apartment);
 
     try {
-        // Exécution de la requête SQL pour mettre à jour l'emplacement et retourner l'objet modifié
-        // Retourne l'emplacement modifié ou null si aucun appartement n'a été modifié
-        return await db.oneOrNone(
-            `UPDATE apartments
-             SET ${attrsStr}
-             WHERE apartments_id = $${values.length + 1} RETURNING *;`, [...values, id]);
+        return await db.tx(async t => {
+            if (address) {
+                const addressAttrsStr = Object.keys(address)
+                    .map((k, index) => `${k} = $${index + 1}`)
+                    .join(", ");
+                const addressValues = Object.values(address);
+
+                await t.none(
+                    `UPDATE address
+                     SET ${addressAttrsStr}
+                     WHERE address_id = (SELECT address_id FROM apartments WHERE apartments_id = $${addressValues.length + 1})`,
+                    [...addressValues, id]
+                );
+            }
+
+            if (apartmentAttrsStr) {
+                await t.none(
+                    `UPDATE apartments
+                     SET ${apartmentAttrsStr}
+                     WHERE apartments_id = $${apartmentValues.length + 1}`,
+                    [...apartmentValues, id]
+                );
+            }
+
+            const updatedApartment = await t.oneOrNone(
+                `SELECT * FROM apartments WHERE apartments_id = $1`,
+                [id]
+            );
+
+            return updatedApartment;
+        });
     } catch (error) {
         console.error(`Failed to update apartment with ID ${id}:`, error);
         throw error;
     }
 }
 
-// Fonction asynchrone pour supprimer un emplacement par son ID
 async function deleteOne(id) {
+    if (!id) {
+        throw new Error("Apartment ID is required.");
+    }
+
     try {
-        // Exécution de la requête SQL pour supprimer l'emplacement et retourner l'ID supprimé
-        // Retourner l'ID supprimé ou null si aucun appartement n'a été supprimé
         return await db.oneOrNone(
             "DELETE FROM apartments WHERE apartments_id = $1 RETURNING apartments_id;",
             [id]
@@ -201,5 +293,4 @@ async function deleteOne(id) {
     }
 }
 
-// Exportation des fonctions pour utilisation dans d'autres parties du code
-module.exports = {createOne, getOne, getAll, updateOne, deleteOne, getCarousel};
+module.exports = { createOne, getOne, getAll, updateOne, deleteOne, getCarousel,getApartmentTypeIdByName, getApartmentImages };
