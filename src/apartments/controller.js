@@ -22,6 +22,14 @@ controller.get("/carousel", async (req, res, next) => {
         next(err);
     }
 });
+controller.get("/carousel/:id", async (req, res, next) => {
+    try {
+        const data = await apartmentsServices.getApartmentImageById(Number(req.params.id));
+        res.json(data);
+    } catch (err) {
+        next(err);
+    }
+});
 
 controller.get("/:id", async (req, res, next) => {
     try {

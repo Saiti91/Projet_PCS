@@ -1,45 +1,51 @@
-// Importation de la bibliothèque Joi pour la validation des schémas
+//apartments/model.js
 const Joi = require("joi");
 
-// Schéma pour la création d'un emplacement
+// Schéma pour la création d'un emplacement avec adresse
 const createApartmentSchema = Joi.object({
-    ownerEmail: Joi.string().required(), // ID du propriétaire, doit être un entier positif
-    owner_id: Joi.number().integer().positive().optional(),
-    surface: Joi.number().integer().positive().required(), // Superficie de l'emplacement, en m², doit être un entier positif
-    address: Joi.string().required(), // Adresse de l'emplacement, doit être une chaîne de caractères non vide
-    longitude: Joi.number().optional(),
-    latitude: Joi.number().optional(),
-    capacity: Joi.number().integer().positive().required(),// Capacité d'accueil de l'emplacement, en nombre de personnes, doit être un entier positif
-    apartmentsType: Joi.string().required(), // Type de l'emplacement, doit être une chaîne de caractères non vide
-    garden: Joi.bool().required(), // Jardin de l'emplacement, doit être un booléen
-    roomNumber: Joi.number().integer().positive().required(), // Nombre de pièces de l'emplacement, doit être un entier positif
-    pool: Joi.bool().required(), // Piscine de l'emplacement, doit être un booléen
-    price: Joi.number().positive().required(), // Prix de location de l'emplacement, doit être un nombre positif
-    available: Joi.bool().required(), // Disponibilité de l'emplacement, doit être un booléen
-    imagePaths: Joi.array().items(Joi.string()).optional()
+    ownerEmail: Joi.string().email().required(),
+    surface: Joi.number().integer().positive().required(),
+    capacity: Joi.number().integer().positive().required(),
+    apartmentsType: Joi.string().required(),
+    numberOfRoom: Joi.number().integer().positive().required(),
+    price: Joi.number().positive().required(),
+    address: Joi.object({
+        longitude: Joi.number().allow(null).optional(),
+        latitude: Joi.number().allow(null).optional(),
+        number: Joi.number().integer().required(),
+        addressComplement: Joi.string().valid('bis', 'ter').allow(null, '').optional(),
+        building: Joi.string().allow(null, '').optional(),
+        apartmentNumber: Joi.number().integer().allow(null).optional(),
+        street: Joi.string().required(),
+        CP: Joi.number().integer().required(),
+        town: Joi.string().required()
+    }).required(),
+    imagePaths: Joi.array().items(Joi.string()).allow(null).optional()
 });
 
-
-// Schéma pour la mise à jour d'un emplacement existant
+// Schéma pour la mise à jour d'un emplacement avec adresse
 const updateApartmentSchema = Joi.object({
-    ownerEmail: Joi.string().optional(), // ID du propriétaire, optionnel
-    owner_id: Joi.number().integer().positive().optional(),
-    surface: Joi.number().integer().positive().optional(), // Superficie de l'emplacement, optionnelle
-    address: Joi.string().optional(), // Adresse de l'emplacement, optionnelle
-    longitude: Joi.number().optional(),
-    latitude: Joi.number().optional(),
-    capacity: Joi.number().integer().positive().optional(), // Capacité d'accueil, optionnelle
-    type: Joi.string().optional(), // Type de l'emplacement, doit être une chaîne de caractères non vide
-    garden: Joi.bool().optional(), // Jardin de l'emplacement, doit être un booléen
-    roomNumber: Joi.number().integer().positive().optional(), // Nombre de pièces de l'emplacement, doit être un entier positif
-    pool: Joi.bool().optional(), // Piscine de l'emplacement, doit être un booléen
-    price: Joi.number().positive().optional(), // Prix de location, optionnel
-    available: Joi.bool().optional(), // Disponibilité, optionnelle
-    imagePaths: Joi.array().items(Joi.string()).optional()
-}).min(1); // Au moins une des propriétés doit être mise à jour
+    ownerEmail: Joi.string().optional(),
+    surface: Joi.number().integer().positive().optional(),
+    capacity: Joi.number().integer().positive().optional(),
+    apartmentsType: Joi.string().optional(),
+    numberOfRoom: Joi.number().integer().positive().optional(),
+    price: Joi.number().positive().optional(),
+    address: Joi.object({
+        longitude: Joi.number().allow(null).optional(),
+        latitude: Joi.number().allow(null).optional(),
+        number: Joi.number().integer().optional(),
+        addressComplement: Joi.string().valid('bis', 'ter').allow(null, '').optional(),
+        building: Joi.string().allow(null, '').optional(),
+        apartmentNumber: Joi.number().integer().allow(null).optional(),
+        street: Joi.string().optional(),
+        CP: Joi.number().integer().optional(),
+        town: Joi.string().optional()
+    }).optional(),
+    imagePaths: Joi.array().items(Joi.string()).allow(null).optional()
+}).min(1);
 
-// Exportation des schémas pour utilisation dans d'autres parties du code
 module.exports = {
-    createLocationSchema: createApartmentSchema,
-    updateLocationSchema: updateApartmentSchema,
+    createApartmentSchema,
+    updateApartmentSchema,
 };

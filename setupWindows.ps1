@@ -9,6 +9,14 @@ docker pull postgres:latest
 Write-Host "Démarrage du conteneur Docker pour PostgreSQL..."
 docker run --name PCS_postgres -e POSTGRES_PASSWORD=password -d -v ${PWD}/database:/docker-entrypoint-initdb.d -p 5432:5432 postgres:latest
 
+# Attendre que le conteneur soit complètement démarré
+Write-Host "Attente de 10 secondes pour que le conteneur démarre..."
+Start-Sleep -Seconds 10
+
+# Exécuter le script SQL
+Write-Host "Exécution du script SQL pour initialiser la base de données..."
+docker exec -i PCS_postgres psql -U postgres -f /docker-entrypoint-initdb.d/datainit/dataInit.sql
+
 # Vérifier si Node.js est installé et l'installer si ce n'est pas le cas
 $nodeInstalled = Get-Command node -ErrorAction SilentlyContinue
 if (-not $nodeInstalled)
