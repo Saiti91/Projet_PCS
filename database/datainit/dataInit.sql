@@ -8,13 +8,13 @@ VALUES
     (1.4442, 43.6047, 50, null, null, 505, 'Capitole', 31000, 'Toulouse');
 
 -- Insertions for the users table
-INSERT INTO users (role, email, password, username, first_name, last_name, telephone, address_id)
+INSERT INTO users (role, email, password, first_name, last_name, telephone, address_id)
 VALUES
-    ('admin', 'test@user.com', 'password', 'admin', 'admin', 'admin', '+33612345678', 1),
-    ('staff', 'staff@user.com', 'password', 'staff', 'staff', 'staff', '+33612345678', 2),
-    ('customer', 'customer@user.com', 'password', 'customer', 'customer', 'customer', '+33612345678', 3),
-    ('provider', 'provider@user.com', 'password', 'provider', 'provider', 'provider', '+33612345678', 4),
-    ('owner', 'owner@user.com', 'password', 'owner', 'owner', 'owner', '+33612345678', 5);
+    ('admin', 'test@user.com', 'password', 'admin', 'admin', '+33612345678', 1),
+    ('staff', 'staff@user.com', 'password', 'staff', 'staff', '+33612345678', 2),
+    ('customer', 'customer@user.com', 'password', 'customer', 'customer', '+33612345678', 3),
+    ('provider', 'provider@user.com', 'password', 'provider', 'provider', '+33612345678', 4),
+    ('owner', 'owner@user.com', 'password', 'owner', 'owner', '+33612345678', 5);
 
 -- Insertions for the apartmentsTypes table
 INSERT INTO apartmentsTypes (name)
@@ -26,13 +26,13 @@ VALUES
     ('Loft');
 
 -- Insertions for the apartments table
-INSERT INTO apartments (owner_id, surface, address_id, capacity, apartmentsType_id, numberOfRoom, price)
+INSERT INTO apartments (owner_id, surface, address_id, capacity, apartmentsType_id,name, numberOfRoom, price)
 VALUES
-    (5, 35, 1, 2, 1, 1, 600),
-    (5, 45, 2, 3, 2, 2, 800),
-    (5, 60, 3, 4, 3, 3, 1000),
-    (5, 75, 4, 5, 4, 4, 1200),
-    (5, 90, 5, 6, 5, 2, 1500);
+    (5, 35, 1, 2, 1,'maison de campagne' ,1, 600),
+    (5, 45, 2, 3, 2, 'maison en bord de mer',2, 800),
+    (5, 60, 3, 4, 3,'appartement parisien' ,3, 1000),
+    (5, 75, 4, 5, 4, 'maison écologique',4, 1200),
+    (5, 90, 5, 6, 5,'chalet à la montagne' ,2, 1500);
 
 -- Insertions for the apartmentFeatures table
 INSERT INTO apartmentFeatures (name)
