@@ -12,8 +12,7 @@ async function createOne(location) {
 
     return await db.one(
         `INSERT INTO reservations(${attributesString})
-         VALUES (${valuesString})
-         RETURNING *;`,
+         VALUES (${valuesString}) RETURNING *;`,
         values
     );
 }
@@ -37,8 +36,7 @@ async function updateOne(id, reservation) {
     const modified = await db.oneOrNone(
         `UPDATE reservations
          SET ${attrsStr}
-         WHERE reservations_id = $1
-         RETURNING *;`,
+         WHERE reservations_id = $1 RETURNING *;`,
         values
     );
 

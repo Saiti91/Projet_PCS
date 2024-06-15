@@ -4,8 +4,10 @@ const Repository = require("./repository");
 const UserRepository = require("../users/repository");
 const {InvalidArgumentError} = require("../common/service_errors");
 const {getGeoCoordinates} = require("../common/middlewares/gps_middleware");
+const fs = require('fs');
+const path = require('path');
 
-async function createOne(location) {
+async function createOne(location, files) {
     // Nettoyer les valeurs vides pour addressComplement
     if (location.address.addressComplement === '') {
         location.address.addressComplement = null;
@@ -44,19 +46,35 @@ async function createOne(location) {
 
     // Récupération de l'ID du type d'appartement via le repository
     const apartmentType = await Repository.getApartmentTypeIdByName(location.apartmentsType);
-    console.log(apartmentType);
     if (!apartmentType) {
         throw new InvalidArgumentError("Invalid apartment type!");
     }
     // Remplacer le type d'appartement par son ID
     location.apartmentsType_id = apartmentType;
     delete location.apartmentsType;
-    console.log(location);
+
     // Création de l'emplacement dans la base de données et retour du résultat
     try {
         const apartment = await Repository.createOne(location);
-        console.log(apartment.apartments_id);
-        return await Repository.createCalendarForApartment(apartment.apartments_id);
+        const apartmentId = apartment.apartments_id;
+
+        // Create a directory for the apartment
+        const apartmentDir = path.join(__dirname, `../src/assets/housing/${apartmentId}`);
+        if (!fs.existsSync(apartmentDir)) {
+            fs.mkdirSync(apartmentDir);
+        }
+
+        // Rename and move files to the apartment directory
+        const imagePaths = files.map((file, index) => {
+            const newFilePath = path.join(apartmentDir, `${index + 1}${path.extname(file.originalname)}`);
+            fs.renameSync(file.path, newFilePath);
+            return `/src/assets/housing/${apartmentId}/${index + 1}${path.extname(file.originalname)}`;
+        });
+
+        // Save image paths to the database
+        await Repository.saveImagePaths(apartmentId, imagePaths);
+
+        return await Repository.createCalendarForApartment(apartmentId);
     } catch (error) {
         console.error("Error creating location:", error);
         throw new Error("Failed to create location.");

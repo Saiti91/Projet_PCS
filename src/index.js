@@ -40,7 +40,7 @@ app.get("/", (_req, res) => {
     res.json({
         message: "Welcome to PCS API!",
         routes: ["/users", "/auth", "/apartments", "/reservations", "/services", "/calendar", "/commentary",
-            "/apartmentsCalendar", "/servicesCalendar", "/inventory","/tickets","/invoices"],
+            "/apartmentsCalendar", "/servicesCalendar", "/inventory", "/tickets", "/invoices"],
     });
 });
 

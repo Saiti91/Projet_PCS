@@ -1,9 +1,9 @@
-const { createTicketSchema, updateTicketSchema } = require("./model");
+const {createTicketSchema, updateTicketSchema} = require("./model");
 const ticketRepository = require("./repository");
-const { InvalidArgumentError } = require("../common/service_errors");
+const {InvalidArgumentError} = require("../common/service_errors");
 
 async function createTicket(data) {
-    const { value, error } = createTicketSchema.validate(data);
+    const {value, error} = createTicketSchema.validate(data);
     if (error) {
         console.error("Validation error:", error);
         throw new InvalidArgumentError("Invalid ticket data!");
@@ -12,7 +12,7 @@ async function createTicket(data) {
 }
 
 async function updateTicket(ticketId, data) {
-    const { value, error } = updateTicketSchema.validate(data);
+    const {value, error} = updateTicketSchema.validate(data);
     if (error) {
         console.error("Validation error:", error);
         throw new InvalidArgumentError("Invalid ticket data!");

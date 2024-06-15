@@ -14,8 +14,8 @@ async function getGeoCoordinates(address) {
         switch (response.data.status) {
             case 'OK':
                 if (response.data.results.length > 0) {
-                    const { lat, lng } = response.data.results[0].geometry.location;
-                    return { latitude: lat, longitude: lng };
+                    const {lat, lng} = response.data.results[0].geometry.location;
+                    return {latitude: lat, longitude: lng};
                 }
                 break;
             case 'ZERO_RESULTS':
@@ -29,4 +29,4 @@ async function getGeoCoordinates(address) {
     }
 }
 
-module.exports = { getGeoCoordinates };
+module.exports = {getGeoCoordinates};

@@ -1,7 +1,7 @@
 const db = require("../common/db_handler");
 
 const createInvoice = async (invoice) => {
-    const { userId, providerId, reservationId, amount, issuedDate, paid } = invoice;
+    const {userId, providerId, reservationId, amount, issuedDate, paid} = invoice;
     const result = await db.query(
         `INSERT INTO invoices (user_id, provider_id, reservation_id, amount, issued_date, paid) 
          VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`,
