@@ -1,7 +1,7 @@
 const db = require("../common/db_handler");
 
 const createInspection = async (inspection) => {
-    const { reservationId, description, photos, type } = inspection;
+    const {reservationId, description, photos, type} = inspection;
 
     const client = await db.connect(); // Connect to the database
     try {
@@ -30,7 +30,7 @@ const createInspection = async (inspection) => {
 };
 
 const updateInspection = async (inspectionId, updates) => {
-    const { comments, photos, status } = updates;
+    const {comments, photos, status} = updates;
 
     const client = await db.connect(); // Connect to the database
     try {

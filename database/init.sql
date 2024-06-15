@@ -1,5 +1,4 @@
 CREATE TYPE role AS ENUM ('admin', 'staff', 'owner', 'customer','provider');
-CREATE TYPE role AS ENUM ('admin', 'staff', 'owner', 'customer','provider');
 CREATE TYPE addressComplements AS ENUM ('bis', 'ter');
 CREATE TYPE subscriptionType AS ENUM ('free', 'bagPacker', 'explorator');
 CREATE TYPE commentaryType AS ENUM ('apartment', 'serviceProvider');

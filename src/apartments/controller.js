@@ -1,7 +1,10 @@
-const { Router } = require("express");
+// apartments/controller.js
+
+const {Router} = require("express");
 const apartmentsServices = require("./service");
-const { NotFoundError } = require("../common/http_errors");
+const {NotFoundError} = require("../common/http_errors");
 const authorize = require("../common/middlewares/authorize_middleware");
+const upload = require("../common/middlewares/uploads_middleware");
 
 const controller = Router();
 
@@ -22,6 +25,7 @@ controller.get("/carousel", async (req, res, next) => {
         next(err);
     }
 });
+
 controller.get("/carousel/:id", async (req, res, next) => {
     try {
         const data = await apartmentsServices.getApartmentImageById(Number(req.params.id));
@@ -43,9 +47,10 @@ controller.get("/:id", async (req, res, next) => {
     }
 });
 
-controller.post("/", authorize(["staff", "admin"]), async (req, res, next) => {
+// Updated endpoint to handle file uploads
+controller.post("/", authorize(["staff", "admin"]), upload.array('images', 5), async (req, res, next) => {
     try {
-        const data = await apartmentsServices.createOne(req.body);
+        const data = await apartmentsServices.createOne(req.body, req.files);
         res.status(201).json(data);
     } catch (err) {
         next(err);

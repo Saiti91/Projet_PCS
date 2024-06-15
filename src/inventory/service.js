@@ -1,9 +1,9 @@
 const inventoryRepository = require("./repository");
-const { InvalidArgumentError } = require("../common/service_errors");
-const { createInventorySchema, confirmArrivalSchema, createExitInspectionSchema } = require("./model");
+const {InvalidArgumentError} = require("../common/service_errors");
+const {createInventorySchema, confirmArrivalSchema, createExitInspectionSchema} = require("./model");
 
 async function createPreArrivalInspection(data) {
-    const { value, error } = createInventorySchema.validate(data);
+    const {value, error} = createInventorySchema.validate(data);
     if (error) {
         console.error("Validation error:", error);
         throw new InvalidArgumentError("Invalid inspection data!");
@@ -13,16 +13,20 @@ async function createPreArrivalInspection(data) {
 }
 
 async function confirmArrivalInspection(data) {
-    const { value, error } = confirmArrivalSchema.validate(data);
+    const {value, error} = confirmArrivalSchema.validate(data);
     if (error) {
         console.error("Validation error:", error);
         throw new InvalidArgumentError("Invalid inspection data!");
     }
-    return await inventoryRepository.updateInspection(value.inspectionId, { comments: value.comments, photos: value.photos, status: "confirmed" });
+    return await inventoryRepository.updateInspection(value.inspectionId, {
+        comments: value.comments,
+        photos: value.photos,
+        status: "confirmed"
+    });
 }
 
 async function createExitInspectionByClient(data) {
-    const { value, error } = createInventorySchema.validate(data);
+    const {value, error} = createInventorySchema.validate(data);
     if (error) {
         console.error("Validation error:", error);
         throw new InvalidArgumentError("Invalid inspection data!");
@@ -32,7 +36,7 @@ async function createExitInspectionByClient(data) {
 }
 
 async function createExitInspectionByPCS(data) {
-    const { value, error } = createInventorySchema.validate(data);
+    const {value, error} = createInventorySchema.validate(data);
     if (error) {
         console.error("Validation error:", error);
         throw new InvalidArgumentError("Invalid inspection data!");

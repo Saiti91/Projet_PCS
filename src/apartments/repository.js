@@ -1,8 +1,9 @@
+//apartments/repository.js
 const db = require("../common/db_handler");
 const calendar = require("../apartmentCalendar/repository");
 
 async function createOne(apartment) {
-    const {imagePaths, address} = apartment;
+    const {address} = apartment;
 
     // Validate required fields
     if (!apartment.ownerEmail) {
@@ -46,18 +47,6 @@ async function createOne(apartment) {
                 apartmentValues
             );
 
-            // Insert images associated with the apartment
-            if (imagePaths && imagePaths.length > 0) {
-                const insertImageQueries = imagePaths.map(path => {
-                    return t.none(
-                        `INSERT INTO apartmentsImage(apartment_id, path)
-                         VALUES ($1, $2)`,
-                        [newApartment.apartments_id, path]
-                    );
-                });
-                await t.batch(insertImageQueries);
-            }
-
             return newApartment;
         });
     } catch (error) {
@@ -68,6 +57,22 @@ async function createOne(apartment) {
         await resetPrimaryKeySequence('apartments', 'apartments_id');
 
         throw new Error("Failed to create apartment.");
+    }
+}
+
+async function saveImagePaths(apartmentId, imagePaths) {
+    try {
+        const insertImageQueries = imagePaths.map(path => {
+            return db.none(
+                `INSERT INTO apartmentsImage(apartment_id, path)
+                 VALUES ($1, $2)`,
+                [apartmentId, path]
+            );
+        });
+        await db.tx(t => t.batch(insertImageQueries));
+    } catch (error) {
+        console.error("Failed to save image paths:", error);
+        throw new Error("Failed to save image paths.");
     }
 }
 
@@ -344,5 +349,6 @@ module.exports = {
     getCarousel,
     getApartmentTypeIdByName,
     getApartmentImages,
-    createCalendarForApartment
+    createCalendarForApartment,
+    saveImagePaths
 };

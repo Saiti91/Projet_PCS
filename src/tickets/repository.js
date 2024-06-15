@@ -1,7 +1,7 @@
 const db = require("../common/db_handler");
 
 const createTicket = async (ticket) => {
-    const { userId, serviceProviderId, subject, description, priority, category, status, assignedTo } = ticket;
+    const {userId, serviceProviderId, subject, description, priority, category, status, assignedTo} = ticket;
     const result = await db.query(
         `INSERT INTO tickets (user_id, serviceProvider_id, subject, description, priority, category, status, assigned_to) 
          VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,

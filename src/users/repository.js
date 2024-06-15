@@ -103,8 +103,7 @@ async function updateOne(id, user) {
     const modified = await db.oneOrNone(
         `UPDATE users
          SET ${attrsStr}
-         WHERE users_id = ${id}
-         RETURNING *;`,
+         WHERE users_id = ${id} RETURNING *;`,
         {id, ...user}
     );
 
