@@ -1,4 +1,5 @@
 CREATE TYPE role AS ENUM ('admin', 'staff', 'owner', 'customer','provider');
+CREATE TYPE role AS ENUM ('admin', 'staff', 'owner', 'customer','provider');
 CREATE TYPE addressComplements AS ENUM ('bis', 'ter');
 CREATE TYPE subscriptionType AS ENUM ('free', 'bagPacker', 'explorator');
 CREATE TYPE commentaryType AS ENUM ('apartment', 'serviceProvider');
@@ -30,7 +31,6 @@ CREATE TABLE users
     role       role          NOT NULL,
     email      citext UNIQUE NOT NULL,
     password   citext        NOT NULL,
-    username   citext        NOT NULL,
     first_name citext        NOT NULL,
     last_name  citext        NOT NULL,
     telephone  VARCHAR(15) CHECK (telephone ~ '^\+?\d{1,15}$'),
@@ -76,7 +76,8 @@ CREATE TABLE apartments
     capacity          int,
     apartmentsType_id int REFERENCES apartmentsTypes (apartmentsTypes_id) ON DELETE CASCADE,
     numberOfRoom      int,
-    price             int
+    price             int,
+    name              citext
 );
 
 -- Apartment Features

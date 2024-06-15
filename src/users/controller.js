@@ -44,7 +44,6 @@ controller.get(
 //Vérifie le role Staff et appel la méthode Create user
 controller.post(
     "/",
-    authorize(["staff"]),
     (req, res, next) => {
         usersService.createOne(req.body)
             .then((data) => {
