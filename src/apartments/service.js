@@ -1,9 +1,9 @@
 // apartments/service.js
-const { createApartmentSchema, updateApartmentSchema } = require("./model");
+const {createApartmentSchema, updateApartmentSchema} = require("./model");
 const Repository = require("./repository");
 const UserRepository = require("../users/repository");
-const { InvalidArgumentError } = require("../common/service_errors");
-const { getGeoCoordinates } = require("../common/middlewares/gps_middleware");
+const {InvalidArgumentError} = require("../common/service_errors");
+const {getGeoCoordinates} = require("../common/middlewares/gps_middleware");
 
 async function createOne(location) {
     // Nettoyer les valeurs vides pour addressComplement
@@ -25,7 +25,7 @@ async function createOne(location) {
     }
 
     // Validation de l'emplacement avec le schéma défini
-    const { value, error } = createApartmentSchema.validate(location, { allowUnknown: true });
+    const {value, error} = createApartmentSchema.validate(location, {allowUnknown: true});
     if (error) {
         console.error("Validation error:", error);
         throw new InvalidArgumentError("Invalid location data!");
@@ -39,22 +39,24 @@ async function createOne(location) {
 
     // Mise à jour du rôle de l'utilisateur si nécessaire
     if (owner.role === "customer") {
-        await UserRepository.updateOne(location.ownerEmail, { role: "owner" });
+        await UserRepository.updateOne(location.ownerEmail, {role: "owner"});
     }
 
     // Récupération de l'ID du type d'appartement via le repository
     const apartmentType = await Repository.getApartmentTypeIdByName(location.apartmentsType);
+    console.log(apartmentType);
     if (!apartmentType) {
         throw new InvalidArgumentError("Invalid apartment type!");
     }
-
     // Remplacer le type d'appartement par son ID
-    location.apartmentsType_id = apartmentType.apartmentsTypes_id;
+    location.apartmentsType_id = apartmentType;
     delete location.apartmentsType;
     console.log(location);
     // Création de l'emplacement dans la base de données et retour du résultat
     try {
-        return await Repository.createOne(location);
+        const apartment = await Repository.createOne(location);
+        console.log(apartment.apartments_id);
+        return await Repository.createCalendarForApartment(apartment.apartments_id);
     } catch (error) {
         console.error("Error creating location:", error);
         throw new Error("Failed to create location.");
@@ -90,6 +92,7 @@ async function getCarousel() {
         throw new Error("Failed to retrieve carousel locations.");
     }
 }
+
 // Fonction asynchrone pour récupérer 10 emplacements
 async function getApartmentImageById(id) {
     try {

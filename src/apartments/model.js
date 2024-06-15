@@ -7,6 +7,7 @@ const createApartmentSchema = Joi.object({
     surface: Joi.number().integer().positive().required(),
     capacity: Joi.number().integer().positive().required(),
     apartmentsType: Joi.string().required(),
+    apartmentsType_id: Joi.number().integer().optional(),
     numberOfRoom: Joi.number().integer().positive().required(),
     price: Joi.number().positive().required(),
     address: Joi.object({

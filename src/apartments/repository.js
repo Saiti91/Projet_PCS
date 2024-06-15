@@ -2,8 +2,9 @@ const db = require("../common/db_handler");
 const calendar = require("../apartmentCalendar/repository");
 
 async function createOne(apartment) {
-    const { imagePaths, address } = apartment;
+    const {imagePaths, address} = apartment;
 
+    // Validate required fields
     if (!apartment.ownerEmail) {
         throw new Error("Owner email is required.");
     }
@@ -12,39 +13,40 @@ async function createOne(apartment) {
         throw new Error("Address information is incomplete.");
     }
 
-    delete apartment.imagePaths;
-    delete apartment.address;
-
+    // Retrieve the owner ID from the database
     const owner = await db.oneOrNone("SELECT users_id FROM users WHERE email=$1", [apartment.ownerEmail]);
     if (!owner) {
         throw new Error("No user found with the provided email.");
     }
-    delete apartment.ownerEmail;
     apartment.owner_id = owner.users_id;
+
+    // Prepare to remove unnecessary properties
+    delete apartment.imagePaths;
+    delete apartment.address;
+    delete apartment.ownerEmail;
 
     try {
         return await db.tx(async t => {
+            // Insert address into the database
             const newAddress = await t.one(
-                `INSERT INTO address (longitude, latitude, number, addressComplement, building, apartmentNumber, street, CP, town)
-                 VALUES ($<longitude>, $<latitude>, $<number>, $<addressComplement>, $<building>, $<apartmentNumber>, $<street>, $<CP>, $<town>)
-                     RETURNING address_id`,
-                address
+                `INSERT INTO address (longitude, latitude, number, addressComplement, building, apartmentNumber, street,
+                                      CP, town)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING address_id`,
+                [address.longitude, address.latitude, address.number, address.addressComplement, address.building, address.apartmentNumber, address.street, address.CP, address.town]
             );
-
             apartment.address_id = newAddress.address_id;
-            console.log(apartment.address_id);
-            const attributesString = Object.keys(apartment).join(",");
-            const valuesString = Object.keys(apartment)
-                .map(k => `$<${k}>`)
-                .join(",");
 
+            // Insert apartment details into the database
+            const attributesString = Object.keys(apartment).join(",");
+            const valuesString = Object.keys(apartment).map((_, i) => `$${i + 1}`).join(",");
+            const apartmentValues = Object.values(apartment);
             const newApartment = await t.one(
                 `INSERT INTO apartments(${attributesString})
-                 VALUES (${valuesString})
-                     RETURNING apartments_id, owner_id;`,
-                apartment
+                 VALUES (${valuesString}) RETURNING apartments_id;`,
+                apartmentValues
             );
-            console.log(newApartment.apartments_id);
+
+            // Insert images associated with the apartment
             if (imagePaths && imagePaths.length > 0) {
                 const insertImageQueries = imagePaths.map(path => {
                     return t.none(
@@ -53,25 +55,59 @@ async function createOne(apartment) {
                         [newApartment.apartments_id, path]
                     );
                 });
-
                 await t.batch(insertImageQueries);
             }
-
-            await calendar.createAvailabilities(newApartment.apartments_id);
 
             return newApartment;
         });
     } catch (error) {
         console.error("Failed to create apartment:", error);
+
+        // Reset the sequences for the affected tables
+        await resetPrimaryKeySequence('address', 'address_id');
+        await resetPrimaryKeySequence('apartments', 'apartments_id');
+
         throw new Error("Failed to create apartment.");
     }
 }
 
-async function getApartmentTypeIdByName(name) {
-    return db.oneOrNone("SELECT apartmentsTypes_id FROM apartmentsTypes WHERE name = $1", [name]);
+async function resetPrimaryKeySequence(tableName, primaryKeyColumn) {
+    const sequenceName = `${tableName}_${primaryKeyColumn}_seq`;
+    const query = `
+        SELECT setval('${sequenceName}', COALESCE((SELECT MAX(${primaryKeyColumn}) FROM ${tableName}) + 1, 1), false);
+    `;
+    try {
+        await db.none(query);
+        console.log(`Sequence ${sequenceName} has been reset.`);
+    } catch (error) {
+        console.error(`Failed to reset sequence ${sequenceName}:`, error);
+    }
 }
 
-// Fonction asynchrone pour récupérer un emplacement spécifique par son ID
+async function createCalendarForApartment(apartmentId) {
+    if (!apartmentId) {
+        throw new Error("Apartment ID is required.");
+    }
+
+    try {
+        return await db.tx(async t => {
+            // Create availabilities for the apartment
+            await calendar.createAvailabilities(apartmentId, t);
+        });
+    } catch (error) {
+        console.error("Failed to create calendar:", error);
+        throw new Error("Failed to create calendar.");
+    }
+}
+
+async function getApartmentTypeIdByName(name) {
+    const result = await db.oneOrNone("SELECT apartmentsTypes_id FROM apartmentsTypes WHERE name = $1", [name]);
+    if (!result) {
+        throw new Error(`Apartment type with name "${name}" not found.`);
+    }
+    return result.apartmentstypes_id;
+}
+
 async function getOne(id) {
     if (!id) {
         throw new Error("Apartment ID is required.");
@@ -91,12 +127,12 @@ async function getOne(id) {
                    addr.town,
                    a.capacity,
                    a.apartmentsType_id,
-                   at.name                     AS apartment_type,
+                   at.name                                               AS apartment_type,
                    a.numberOfRoom,
                    a.price,
-                   ARRAY_AGG(DISTINCT ai.path) AS images,
-                   ARRAY_AGG(DISTINCT af.name) AS features,
-                   u.email                     AS owner_email,
+                   ARRAY_AGG(DISTINCT ai.path)                           AS images,
+                   ARRAY_AGG(DISTINCT af.name)                           AS features,
+                   u.email                                               AS owner_email,
                    JSON_AGG(appartCalendar ORDER BY appartCalendar.date) AS calendar
             FROM apartments a
                      JOIN
@@ -110,12 +146,13 @@ async function getOne(id) {
                      LEFT JOIN
                  apartmentFeatures af ON atf.feature_id = af.feature_id
                      LEFT JOIN
-                 apartmentsTypes at ON a.apartmentsType_id = at.apartmentsTypes_id
-                     LEFT JOIN
-                 apartmentAvailabilities appartCalendar ON a.apartments_id = appartCalendar.apartment_id
+                 apartmentsTypes at
+            ON a.apartmentsType_id = at.apartmentsTypes_id
+                LEFT JOIN
+                apartmentAvailabilities appartCalendar ON a.apartments_id = appartCalendar.apartment_id
             WHERE a.apartments_id = $1
             GROUP BY a.apartments_id, addr.street, addr.building, addr.apartmentNumber, addr.number,
-                     addr.addressComplement, addr.CP, addr.town, at.name, u.email
+                addr.addressComplement, addr.CP, addr.town, at.name, u.email
         `;
 
         const apartment = await db.oneOrNone(apartmentQuery, [id]);
@@ -164,10 +201,11 @@ async function getAll() {
                      LEFT JOIN
                  apartmentFeatures af ON atf.feature_id = af.feature_id
                      LEFT JOIN
-                 apartmentsTypes at ON a.apartmentsType_id = at.apartmentsTypes_id
+                 apartmentsTypes at
+            ON a.apartmentsType_id = at.apartmentsTypes_id
             GROUP BY a.apartments_id, addr.street, addr.building, addr.apartmentNumber, addr.number,
-                     addr.addressComplement, addr.CP, addr.town, at.name, u.email
-            LIMIT 100;
+                addr.addressComplement, addr.CP, addr.town, at.name, u.email
+                LIMIT 100;
         `);
 
         return apartments || [];
@@ -192,10 +230,11 @@ async function getCarousel() {
                 FROM apartmentsImage ai
                 WHERE ai.apartment_id = a.apartments_id
                 ORDER BY ai.image_id
-                LIMIT 1
-                ) ai ON true
+                    LIMIT 1
+                ) ai
+            ON true
             ORDER BY RANDOM()
-            LIMIT 10;
+                LIMIT 10;
         `);
 
         return res || [];
@@ -230,7 +269,7 @@ async function updateOne(id, apartment) {
         throw new Error("Apartment ID and update data are required.");
     }
 
-    const { address } = apartment;
+    const {address} = apartment;
     delete apartment.address;
 
     const apartmentAttrsStr = Object.keys(apartment)
@@ -250,7 +289,8 @@ async function updateOne(id, apartment) {
                 await t.none(
                     `UPDATE address
                      SET ${addressAttrsStr}
-                     WHERE address_id = (SELECT address_id FROM apartments WHERE apartments_id = $${addressValues.length + 1})`,
+                     WHERE address_id =
+                           (SELECT address_id FROM apartments WHERE apartments_id = $${addressValues.length + 1})`,
                     [...addressValues, id]
                 );
             }
@@ -265,7 +305,9 @@ async function updateOne(id, apartment) {
             }
 
             const updatedApartment = await t.oneOrNone(
-                `SELECT * FROM apartments WHERE apartments_id = $1`,
+                `SELECT *
+                 FROM apartments
+                 WHERE apartments_id = $1`,
                 [id]
             );
 
@@ -293,4 +335,14 @@ async function deleteOne(id) {
     }
 }
 
-module.exports = { createOne, getOne, getAll, updateOne, deleteOne, getCarousel,getApartmentTypeIdByName, getApartmentImages };
+module.exports = {
+    createOne,
+    getOne,
+    getAll,
+    updateOne,
+    deleteOne,
+    getCarousel,
+    getApartmentTypeIdByName,
+    getApartmentImages,
+    createCalendarForApartment
+};
