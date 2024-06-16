@@ -1,77 +1,80 @@
-// apartments/service.js
-const {createApartmentSchema, updateApartmentSchema} = require("./model");
+const { createApartmentSchema } = require("./model");
 const Repository = require("./repository");
 const UserRepository = require("../users/repository");
-const {InvalidArgumentError} = require("../common/service_errors");
-const {getGeoCoordinates} = require("../common/middlewares/gps_middleware");
+const { InvalidArgumentError } = require("../common/service_errors");
+const { getGeoCoordinates } = require("../common/middlewares/gps_middleware");
 const fs = require('fs');
 const path = require('path');
 
 async function createOne(location, files) {
-    // Nettoyer les valeurs vides pour addressComplement
+    // Clean up empty values for addressComplement and building
     if (location.address.addressComplement === '') {
         location.address.addressComplement = null;
     }
     if (location.address.building === '') {
         location.address.building = null;
     }
+    console.log(location.address);
+    // Validate address completeness before geocoding
+    if (!location.address.street || !location.address.town || !location.address.CP) {
+        console.error("Incomplete address information for geocoding in service:", location.address.street, location.address.town, location.address.CP);
+        throw new Error("Incomplete address information for geocoding.");
+    }
 
-    // Obtention des coordonnées géographiques
+    // Obtain geo-coordinates
     try {
         const coordinates = await getGeoCoordinates(location.address);
         location.address.latitude = coordinates.latitude;
         location.address.longitude = coordinates.longitude;
     } catch (error) {
-        console.error("Error obtaining coordinates:", error);
-        throw new Error("Failed to obtain geo-coordinates.");
+        throw new Error("Failed to obtain geo-coordinates. Please ensure the address is complete and correct.");
     }
 
-    // Validation de l'emplacement avec le schéma défini
-    const {value, error} = createApartmentSchema.validate(location, {allowUnknown: true});
+    // Validate location data
+    const { value, error } = createApartmentSchema.validate(location, { allowUnknown: true });
     if (error) {
         console.error("Validation error:", error);
         throw new InvalidArgumentError("Invalid location data!");
     }
 
-    // Récupération de l'utilisateur propriétaire pour vérifier son existence
+    // Retrieve the owner to check existence
     const owner = await UserRepository.getOneBy("email", location.ownerEmail);
     if (!owner) {
         throw new InvalidArgumentError("Provided owner does not have an account!");
     }
 
-    // Mise à jour du rôle de l'utilisateur si nécessaire
+    // Update user's role if necessary
     if (owner.role === "customer") {
-        await UserRepository.updateOne(location.ownerEmail, {role: "owner"});
+        await UserRepository.updateOne(location.ownerEmail, { role: "owner" });
     }
 
-    // Récupération de l'ID du type d'appartement via le repository
+    // Retrieve apartment type ID
     const apartmentType = await Repository.getApartmentTypeIdByName(location.apartmentsType);
     if (!apartmentType) {
         throw new InvalidArgumentError("Invalid apartment type!");
     }
-    // Remplacer le type d'appartement par son ID
     location.apartmentsType_id = apartmentType;
     delete location.apartmentsType;
 
-    // Création de l'emplacement dans la base de données et retour du résultat
+    // Create location in database
     try {
         const apartment = await Repository.createOne(location);
         const apartmentId = apartment.apartments_id;
 
-        // Create a directory for the apartment
+        // Create directory for apartment images
         const apartmentDir = path.join(__dirname, `../src/assets/housing/${apartmentId}`);
         if (!fs.existsSync(apartmentDir)) {
-            fs.mkdirSync(apartmentDir);
+            fs.mkdirSync(apartmentDir, { recursive: true });
         }
 
-        // Rename and move files to the apartment directory
+        // Move files to apartment directory
         const imagePaths = files.map((file, index) => {
             const newFilePath = path.join(apartmentDir, `${index + 1}${path.extname(file.originalname)}`);
             fs.renameSync(file.path, newFilePath);
             return `/src/assets/housing/${apartmentId}/${index + 1}${path.extname(file.originalname)}`;
         });
 
-        // Save image paths to the database
+        // Save image paths to database
         await Repository.saveImagePaths(apartmentId, imagePaths);
 
         return await Repository.createCalendarForApartment(apartmentId);
