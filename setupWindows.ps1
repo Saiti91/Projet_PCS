@@ -5,9 +5,13 @@ Start-Process PowerShell -ArgumentList "Set-ExecutionPolicy RemoteSigned -Scope 
 Write-Host "Téléchargement de l'image Docker pour PostgreSQL..."
 docker pull postgres:latest
 
-# Lancer le Docker de la base de données PostgreSQL avec le script SQL
+# Supprimer tout conteneur existant avec le même nom pour éviter les conflits
+Write-Host "Suppression de tout conteneur existant avec le même nom..."
+docker rm -f PCS_postgres
+
+# Lancer le Docker de la base de données PostgreSQL avec le script SQL et activer le redémarrage automatique
 Write-Host "Démarrage du conteneur Docker pour PostgreSQL..."
-docker run --name PCS_postgres -e POSTGRES_PASSWORD=password -d -v ${PWD}/database:/docker-entrypoint-initdb.d -p 5432:5432 postgres:latest
+docker run --name PCS_postgres -e POSTGRES_PASSWORD=password -d --restart unless-stopped -v ${PWD}/database:/docker-entrypoint-initdb.d -p 5432:5432 postgres:latest
 
 # Attendre que le conteneur soit complètement démarré
 Write-Host "Attente de 10 secondes pour que le conteneur démarre..."

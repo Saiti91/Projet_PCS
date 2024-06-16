@@ -14,7 +14,7 @@ const createApartmentSchema = Joi.object({
         longitude: Joi.number().allow(null).optional(),
         latitude: Joi.number().allow(null).optional(),
         number: Joi.number().integer().required(),
-        addressComplement: Joi.string().valid('bis', 'ter').allow(null, '').optional(),
+        addressComplement: Joi.string().valid('bis', 'ter').allow(null).optional(),
         building: Joi.string().allow(null, '').optional(),
         apartmentNumber: Joi.number().integer().allow(null).optional(),
         street: Joi.string().required(),
