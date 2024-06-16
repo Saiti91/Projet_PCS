@@ -1,37 +1,39 @@
-const { createApartmentSchema } = require("./model");
+const {createApartmentSchema} = require("./model");
 const Repository = require("./repository");
 const UserRepository = require("../users/repository");
-const { InvalidArgumentError } = require("../common/service_errors");
-const { getGeoCoordinates } = require("../common/middlewares/gps_middleware");
+const {InvalidArgumentError} = require("../common/service_errors");
+const {getGeoCoordinates} = require("../common/middlewares/gps_middleware");
 const fs = require('fs');
 const path = require('path');
 
 async function createOne(location, files) {
     // Clean up empty values for addressComplement and building
-    if (location.address.addressComplement === '') {
-        location.address.addressComplement = null;
+    if (location.address.longitude === '') {
+        location.address.longitude = null;
+    }
+    if (location.address.latitude === '') {
+        location.address.latitude = null;
     }
     if (location.address.building === '') {
         location.address.building = null;
     }
-    console.log(location.address);
-    // Validate address completeness before geocoding
-    if (!location.address.street || !location.address.town || !location.address.CP) {
-        console.error("Incomplete address information for geocoding in service:", location.address.street, location.address.town, location.address.CP);
-        throw new Error("Incomplete address information for geocoding.");
+    if (location.address.apartmentNumber === '') {
+        location.address.apartmentNumber = null;
+    }
+    if (location.address.addressComplement === '') {
+        location.address.addressComplement = null;
     }
 
-    // Obtain geo-coordinates
-    try {
-        const coordinates = await getGeoCoordinates(location.address);
-        location.address.latitude = coordinates.latitude;
-        location.address.longitude = coordinates.longitude;
-    } catch (error) {
-        throw new Error("Failed to obtain geo-coordinates. Please ensure the address is complete and correct.");
+    if(location.address)
+    if (!location || !location.address) {
+        console.error("Location or address is not defined:", location);
+        throw new Error("Location or address is not defined.");
     }
+    console.log(location.ownerEmail);
+    console.log(location.apartmentsType);
 
     // Validate location data
-    const { value, error } = createApartmentSchema.validate(location, { allowUnknown: true });
+    const {value, error} = createApartmentSchema.validate(location, {allowUnknown: true});
     if (error) {
         console.error("Validation error:", error);
         throw new InvalidArgumentError("Invalid location data!");
@@ -45,7 +47,7 @@ async function createOne(location, files) {
 
     // Update user's role if necessary
     if (owner.role === "customer") {
-        await UserRepository.updateOne(location.ownerEmail, { role: "owner" });
+        await UserRepository.updateOne(location.ownerEmail, {role: "owner"});
     }
 
     // Retrieve apartment type ID
@@ -56,15 +58,26 @@ async function createOne(location, files) {
     location.apartmentsType_id = apartmentType;
     delete location.apartmentsType;
 
+    console.log("Location data:", location);
+    console.log("address data:", location.address);
+    console.log("Street data:", location.address.street);
+    // Obtain geo-coordinates
+    try {
+        const coordinates = await getGeoCoordinates(location.address);
+        location.address.latitude = coordinates.latitude;
+        location.address.longitude = coordinates.longitude;
+    } catch (error) {
+        throw new Error("Failed to obtain geo-coordinates. Please ensure the address is complete and correct.");
+    }
     // Create location in database
     try {
         const apartment = await Repository.createOne(location);
         const apartmentId = apartment.apartments_id;
 
         // Create directory for apartment images
-        const apartmentDir = path.join(__dirname, `../src/assets/housing/${apartmentId}`);
+        const apartmentDir = path.join(__dirname, `../assets/housing/${apartmentId}`);
         if (!fs.existsSync(apartmentDir)) {
-            fs.mkdirSync(apartmentDir, { recursive: true });
+            fs.mkdirSync(apartmentDir, {recursive: true});
         }
 
         // Move files to apartment directory
