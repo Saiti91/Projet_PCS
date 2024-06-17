@@ -1,9 +1,9 @@
+// services/repository.js
 const db = require("../common/db_handler");
 const pgp = require("pg-promise")();
 
 // Création d'un service
 async function createOne(service) {
-    // Utiliser pg-promise helpers pour gérer l'insertion
     return await db.one(
         pgp.helpers.insert(service, null, "servicesProviders") + " RETURNING *;"
     );
@@ -11,7 +11,6 @@ async function createOne(service) {
 
 // Crée un type de service
 async function createType(type, apartmentFeature = null) {
-    // Utiliser pg-promise helpers pour gérer l'insertion
     const createdType = await db.one(
         pgp.helpers.insert(type, null, "serviceTypes") + " RETURNING *;"
     );
@@ -25,6 +24,32 @@ async function createType(type, apartmentFeature = null) {
     }
 
     return createdType;
+}
+
+// Ajouter un service à une entreprise existante
+async function addServiceToProvider(serviceProviderId, service) {
+    return await db.none(
+        `INSERT INTO serviceProviderToServiceTypes(serviceProvider_id, serviceType_id, price)
+         VALUES ($1, $2, $3);`,
+        [serviceProviderId, service.serviceType_id, service.price]
+    );
+}
+
+// Crée une entreprise avec ses services
+async function createProviderWithServices(provider, services) {
+    const createdProvider = await db.one(
+        pgp.helpers.insert(provider, null, "servicesProviders") + " RETURNING *;"
+    );
+
+    for (const service of services) {
+        await db.none(
+            `INSERT INTO serviceProviderToServiceTypes(serviceProvider_id, serviceType_id, price)
+             VALUES ($1, $2, $3);`,
+            [createdProvider.servicesProviders_id, service.serviceType_id, service.price]
+        );
+    }
+
+    return createdProvider;
 }
 
 // Récupère un service en fonction de son ID
@@ -73,4 +98,15 @@ async function deleteOne(id) {
     return await db.oneOrNone("DELETE FROM servicesProviders WHERE servicesProviders_id = $1 RETURNING servicesProviders_id;", [id]);
 }
 
-module.exports = {createOne, createType, getOne, getAll, getAppartementById, updateOne, deleteOne, getOneBy};
+module.exports = {
+    createOne,
+    createType,
+    addServiceToProvider,
+    createProviderWithServices,
+    getOne,
+    getAll,
+    getAppartementById,
+    updateOne,
+    deleteOne,
+    getOneBy
+};
