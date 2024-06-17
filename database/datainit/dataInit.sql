@@ -20,10 +20,11 @@ VALUES
 INSERT INTO apartmentsTypes (name)
 VALUES
     ('Studio'),
-    ('T2'),
-    ('T3'),
-    ('T4'),
-    ('Loft');
+    ('House'),
+    ('Flat'),
+    ('Villa'),
+    ('Chalet'),
+    ('Apartment');
 
 -- Insertions for the apartments table
 INSERT INTO apartments (owner_id, surface, address_id, capacity, apartmentsType_id,name, numberOfRoom, price)

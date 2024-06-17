@@ -1,4 +1,5 @@
-const {Router} = require("express");
+// services/controller.js
+const { Router } = require("express");
 const Service = require("./service");
 const NotFoundError = require("../common/http_errors").NotFoundError;
 const InternalServerError = require("../common/http_errors");
@@ -49,7 +50,7 @@ controller.get(
             }
 
             const maxDistance = Number(process.env.PROVIDER_RANGE_KM || 10); // Default to 10 km if not set
-            const {latitude, longitude} = appartement;
+            const { latitude, longitude } = appartement;
 
             const services = await Service.getServicesWithinRadius(latitude, longitude, maxDistance);
             res.json(services);
@@ -78,8 +79,35 @@ controller.post(
     "/type",
     authorize(["staff", "admin"]),
     (req, res, next) => {
-        const {apartmentFeature, ...typeData} = req.body;
+        const { apartmentFeature, ...typeData } = req.body;
         Service.createType(typeData, apartmentFeature)
+            .then((data) => {
+                res.status(201).json(data);
+            })
+            .catch((err) => next(err));
+    },
+);
+
+// Route POST pour ajouter un service à une entreprise existante
+controller.post(
+    "/provider/:providerId/service",
+    authorize(["staff", "admin"]),
+    (req, res, next) => {
+        const providerId = Number(req.params.providerId);
+        Service.addServiceToProvider(providerId, req.body)
+            .then(() => {
+                res.status(201).send();
+            })
+            .catch((err) => next(err));
+    },
+);
+
+// Route POST pour créer une nouvelle entreprise avec ses services
+controller.post(
+    "/provider",
+    authorize(["staff", "admin"]),
+    (req, res, next) => {
+        Service.createProviderWithServices(req.body)
             .then((data) => {
                 res.status(201).json(data);
             })
