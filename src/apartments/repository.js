@@ -5,7 +5,6 @@ const calendar = require("../apartmentCalendar/repository");
 async function createOne(apartment) {
     const {address} = apartment;
 
-    // Validate required fields
     if (!apartment.ownerEmail) {
         throw new Error("Owner email is required.");
     }
@@ -14,45 +13,40 @@ async function createOne(apartment) {
         throw new Error("Address information is incomplete.");
     }
 
-    // Retrieve the owner ID from the database
     const owner = await db.oneOrNone("SELECT users_id FROM users WHERE email=$1", [apartment.ownerEmail]);
     if (!owner) {
         throw new Error("No user found with the provided email.");
     }
     apartment.owner_id = owner.users_id;
 
-    // Prepare to remove unnecessary properties
     delete apartment.imagePaths;
     delete apartment.address;
     delete apartment.ownerEmail;
 
     try {
         return await db.tx(async t => {
-            // Insert address into the database
             const newAddress = await t.one(
                 `INSERT INTO address (longitude, latitude, number, addressComplement, building, apartmentNumber, street,
                                       CP, town)
-                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING address_id`,
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                 RETURNING address_id`,
                 [address.longitude, address.latitude, address.number, address.addressComplement, address.building, address.apartmentNumber, address.street, address.CP, address.town]
             );
             apartment.address_id = newAddress.address_id;
 
-            // Insert apartment details into the database
             const attributesString = Object.keys(apartment).join(",");
             const valuesString = Object.keys(apartment).map((_, i) => `$${i + 1}`).join(",");
             const apartmentValues = Object.values(apartment);
-            const newApartment = await t.one(
+            return await t.one(
                 `INSERT INTO apartments(${attributesString})
-                 VALUES (${valuesString}) RETURNING apartments_id;`,
+                 VALUES (${valuesString})
+                 RETURNING apartments_id;`,
                 apartmentValues
             );
-
-            return newApartment;
         });
     } catch (error) {
         console.error("Failed to create apartment:", error);
 
-        // Reset the sequences for the affected tables
         await resetPrimaryKeySequence('address', 'address_id');
         await resetPrimaryKeySequence('apartments', 'apartments_id');
 
@@ -60,16 +54,16 @@ async function createOne(apartment) {
     }
 }
 
-async function saveImagePaths(apartmentId, imagePaths) {
+async function saveImagePaths(apartmentId, imagePaths, t) {
     try {
         const insertImageQueries = imagePaths.map(path => {
-            return db.none(
+            return t.none(
                 `INSERT INTO apartmentsImage(apartment_id, path)
                  VALUES ($1, $2)`,
                 [apartmentId, path]
             );
         });
-        await db.tx(t => t.batch(insertImageQueries));
+        await t.batch(insertImageQueries);
     } catch (error) {
         console.error("Failed to save image paths:", error);
         throw new Error("Failed to save image paths.");
@@ -89,16 +83,13 @@ async function resetPrimaryKeySequence(tableName, primaryKeyColumn) {
     }
 }
 
-async function createCalendarForApartment(apartmentId) {
+async function createCalendarForApartment(apartmentId, t) {
     if (!apartmentId) {
         throw new Error("Apartment ID is required.");
     }
 
     try {
-        return await db.tx(async t => {
-            // Create availabilities for the apartment
-            await calendar.createAvailabilities(apartmentId, t);
-        });
+        return await calendar.createAvailabilities(apartmentId, t);
     } catch (error) {
         console.error("Failed to create calendar:", error);
         throw new Error("Failed to create calendar.");
@@ -153,12 +144,12 @@ async function getOne(id) {
                  apartmentFeatures af ON atf.feature_id = af.feature_id
                      LEFT JOIN
                  apartmentsTypes at
-            ON a.apartmentsType_id = at.apartmentsTypes_id
-                LEFT JOIN
-                apartmentAvailabilities appartCalendar ON a.apartments_id = appartCalendar.apartment_id
+                 ON a.apartmentsType_id = at.apartmentsTypes_id
+                     LEFT JOIN
+                 apartmentAvailabilities appartCalendar ON a.apartments_id = appartCalendar.apartment_id
             WHERE a.apartments_id = $1
             GROUP BY a.apartments_id, addr.street, addr.building, addr.apartmentNumber, addr.number,
-                addr.addressComplement, addr.CP, addr.town, at.name, u.email
+                     addr.addressComplement, addr.CP, addr.town, at.name, u.email
         `;
 
         const apartment = await db.oneOrNone(apartmentQuery, [id]);
@@ -209,10 +200,10 @@ async function getAll() {
                  apartmentFeatures af ON atf.feature_id = af.feature_id
                      LEFT JOIN
                  apartmentsTypes at
-            ON a.apartmentsType_id = at.apartmentsTypes_id
+                 ON a.apartmentsType_id = at.apartmentsTypes_id
             GROUP BY a.apartments_id, addr.street, addr.building, addr.apartmentNumber, addr.number,
-                addr.addressComplement, addr.CP, addr.town, at.name, u.email
-                LIMIT 100;
+                     addr.addressComplement, addr.CP, addr.town, at.name, u.email
+            LIMIT 100;
         `);
 
         return apartments || [];
@@ -237,11 +228,11 @@ async function getCarousel() {
                 FROM apartmentsImage ai
                 WHERE ai.apartment_id = a.apartments_id
                 ORDER BY ai.image_id
-                    LIMIT 1
+                LIMIT 1
                 ) ai
-            ON true
+                               ON true
             ORDER BY RANDOM()
-                LIMIT 10;
+            LIMIT 10;
         `);
 
         return res || [];
@@ -311,14 +302,12 @@ async function updateOne(id, apartment) {
                 );
             }
 
-            const updatedApartment = await t.oneOrNone(
+            return await t.oneOrNone(
                 `SELECT *
                  FROM apartments
                  WHERE apartments_id = $1`,
                 [id]
             );
-
-            return updatedApartment;
         });
     } catch (error) {
         console.error(`Failed to update apartment with ID ${id}:`, error);

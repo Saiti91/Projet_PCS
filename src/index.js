@@ -28,9 +28,9 @@ app.use(cors({
     allowedHeaders: 'Content-Type,Authorization',
     exposedHeaders: 'Authorization'
 }));
+
 // Transform le token en un objet utilisable dans le code
 app.use(authMiddleware);
-
 
 // Regex
 app.use("/*/[1-9]+$", idParamGuard);
@@ -57,6 +57,7 @@ app.use("/services", servicesController);
 app.use("/tickets", ticketsController);
 app.use("/users", usersController);
 
+// Middleware de gestion des erreurs
 app.use(errorHandlingMiddleware);
 
 //Console
