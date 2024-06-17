@@ -1,3 +1,4 @@
+//commmon/middlewares/error_middleware.js
 // Importation des classes d'erreur personnalisées et de la bibliothèque Joi
 const {UnauthorizedError} = require("../service_errors");
 const {HTTPError} = require("../http_errors");

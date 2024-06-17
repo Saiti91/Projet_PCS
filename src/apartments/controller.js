@@ -50,7 +50,6 @@ controller.get("/:id", async (req, res, next) => {
 // Updated endpoint to handle file uploads
 controller.post("/", authorize(["staff", "admin"]), upload.array('images', 5), async (req, res, next) => {
     try {
-        console.log(req.body);
         const data = await apartmentsServices.createOne(req.body, req.files);
         res.status(201).json(data);
     } catch (err) {
