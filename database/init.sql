@@ -75,7 +75,7 @@ CREATE TABLE apartments
     capacity          int,
     apartmentsType_id int REFERENCES apartmentsTypes (apartmentsTypes_id) ON DELETE CASCADE,
     numberOfRoom      int,
-    price             int,
+    price             float8,
     name              citext
 );
 

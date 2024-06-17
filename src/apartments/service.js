@@ -1,83 +1,106 @@
-// apartments/service.js
-const {createApartmentSchema, updateApartmentSchema} = require("./model");
+//apartments/service.js
+const {createApartmentSchema} = require("./model");
 const Repository = require("./repository");
 const UserRepository = require("../users/repository");
 const {InvalidArgumentError} = require("../common/service_errors");
 const {getGeoCoordinates} = require("../common/middlewares/gps_middleware");
-const fs = require('fs');
+const db = require("../common/db_handler");
 const path = require('path');
+const fs = require('fs');
 
 async function createOne(location, files) {
-    // Nettoyer les valeurs vides pour addressComplement
-    if (location.address.addressComplement === '') {
-        location.address.addressComplement = null;
-    }
-    if (location.address.building === '') {
-        location.address.building = null;
+    const addressKeys = ['longitude', 'latitude', 'building', 'apartmentNumber', 'addressComplement'];
+    addressKeys.forEach(key => {
+        if (location.address[key] === '') {
+            location.address[key] = null;
+        }
+    });
+
+    if (!location || !location.address) {
+        throw new Error("Location or address is not defined.");
     }
 
-    // Obtention des coordonnées géographiques
-    try {
-        const coordinates = await getGeoCoordinates(location.address);
-        location.address.latitude = coordinates.latitude;
-        location.address.longitude = coordinates.longitude;
-    } catch (error) {
-        console.error("Error obtaining coordinates:", error);
-        throw new Error("Failed to obtain geo-coordinates.");
-    }
-
-    // Validation de l'emplacement avec le schéma défini
-    const {value, error} = createApartmentSchema.validate(location, {allowUnknown: true});
+    const { error } = createApartmentSchema.validate(location, { allowUnknown: true });
     if (error) {
-        console.error("Validation error:", error);
         throw new InvalidArgumentError("Invalid location data!");
     }
 
-    // Récupération de l'utilisateur propriétaire pour vérifier son existence
     const owner = await UserRepository.getOneBy("email", location.ownerEmail);
     if (!owner) {
         throw new InvalidArgumentError("Provided owner does not have an account!");
     }
 
-    // Mise à jour du rôle de l'utilisateur si nécessaire
     if (owner.role === "customer") {
-        await UserRepository.updateOne(location.ownerEmail, {role: "owner"});
+        await UserRepository.updateOne(location.ownerEmail, { role: "owner" });
     }
 
-    // Récupération de l'ID du type d'appartement via le repository
     const apartmentType = await Repository.getApartmentTypeIdByName(location.apartmentsType);
     if (!apartmentType) {
         throw new InvalidArgumentError("Invalid apartment type!");
     }
-    // Remplacer le type d'appartement par son ID
     location.apartmentsType_id = apartmentType;
     delete location.apartmentsType;
 
-    // Création de l'emplacement dans la base de données et retour du résultat
     try {
-        const apartment = await Repository.createOne(location);
-        const apartmentId = apartment.apartments_id;
+        const coordinates = await getGeoCoordinates(location.address);
+        location.address.latitude = coordinates.latitude;
+        location.address.longitude = coordinates.longitude;
+    } catch (error) {
+        throw new InvalidArgumentError("Failed to obtain geo-coordinates. Please ensure the address is complete and correct.");
+    }
 
-        // Create a directory for the apartment
-        const apartmentDir = path.join(__dirname, `../src/assets/housing/${apartmentId}`);
-        if (!fs.existsSync(apartmentDir)) {
-            fs.mkdirSync(apartmentDir);
-        }
+    let apartmentId;
+    let apartmentDir;
+    try {
+        await db.tx(async t => {
+            const apartment = await Repository.createOne(location, t);
+            apartmentId = apartment.apartments_id;
 
-        // Rename and move files to the apartment directory
-        const imagePaths = files.map((file, index) => {
-            const newFilePath = path.join(apartmentDir, `${index + 1}${path.extname(file.originalname)}`);
-            fs.renameSync(file.path, newFilePath);
-            return `/src/assets/housing/${apartmentId}/${index + 1}${path.extname(file.originalname)}`;
+            apartmentDir = path.join(__dirname, `../assets/housing/${apartmentId}`);
+            if (!fs.existsSync(apartmentDir)) {
+                fs.mkdirSync(apartmentDir, { recursive: true });
+            }
+
+            const imagePaths = [];
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const oldPath = file.path;
+                const newPath = path.join(apartmentDir, `${i + 1}${path.extname(file.originalname)}`);
+                if (fs.existsSync(oldPath)) {
+                    fs.renameSync(oldPath, newPath);
+                    imagePaths.push(newPath);
+                } else {
+                    throw new InvalidArgumentError(`File not found: ${oldPath}`);
+                }
+            }
+
+            await Repository.saveImagePaths(apartmentId, imagePaths, t);
+
+            for (const file of files) {
+                if (fs.existsSync(file.path)) {
+                    fs.unlinkSync(file.path);
+                }
+            }
+
+            await Repository.createCalendarForApartment(apartmentId, t);
         });
-
-        // Save image paths to the database
-        await Repository.saveImagePaths(apartmentId, imagePaths);
-
-        return await Repository.createCalendarForApartment(apartmentId);
     } catch (error) {
         console.error("Error creating location:", error);
-        throw new Error("Failed to create location.");
+
+        for (const file of files) {
+            if (fs.existsSync(file.path)) {
+                fs.unlinkSync(file.path);
+            }
+        }
+
+        if (apartmentId) {
+            await Repository.deleteOne(apartmentId);
+            if (apartmentDir && fs.existsSync(apartmentDir)) {
+                fs.rmSync(apartmentDir, { recursive: true});
+            }
+        }
+
+        throw new InvalidArgumentError("Failed to create location.");
     }
 }
 
