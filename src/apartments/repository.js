@@ -121,6 +121,7 @@ async function getOne(id) {
     try {
         const apartmentQuery = `
             SELECT a.apartments_id,
+                   a.name,
                    a.created_at,
                    a.surface,
                    addr.street,
@@ -188,6 +189,7 @@ async function getAll() {
                    addr.town,
                    a.capacity,
                    a.apartmentsType_id,
+                   a.name,
                    at.name                     AS apartment_type,
                    a.numberOfRoom,
                    a.price,
