@@ -63,13 +63,13 @@ VALUES
     ('Transport');
 
 -- Insertions for the servicesProviders table
-INSERT INTO servicesProviders (name, telephone, type, address_id, maxOperatingRadius, price, employee_count)
+INSERT INTO servicesProviders (name, telephone, address_id, maxOperatingRadius, employee_count)
 VALUES
-    ('CleanCo', '+33612345678', 1, 1, 50, 50.0, 10),
-    ('FixIt', '+33623456789', 2, 2, 75, 60.0, 8),
-    ('Foodies', '+33634567890', 3, 3, 30, 100.0, 15),
-    ('SecureGuard', '+33645678901', 4, 4, 100, 70.0, 5),
-    ('TransPro', '+33656789012', 5, 5, 200, 80.0, 20);
+    ('CleanCo', '+33612345678', 1, 50, 10),
+    ('FixIt', '+33623456789', 2, 75, 8),
+    ('Foodies', '+33634567890', 3, 30, 15),
+    ('SecureGuard', '+33645678901', 4, 100, 5),
+    ('TransPro', '+33656789012', 5, 200, 20);
 
 -- Insertions for the serviceProviderToServiceTypes table
 INSERT INTO serviceProviderToServiceTypes (serviceProvider_id, serviceType_id, price)

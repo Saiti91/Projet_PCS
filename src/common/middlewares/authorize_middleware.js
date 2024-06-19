@@ -1,19 +1,49 @@
-// Importation de la classe d'erreur personnalisée pour les situations non autorisées
-const {UnauthorizedError} = require("../service_errors");
+const { UnauthorizedError } = require("../service_errors");
+const { expressjwt: expressJwt } = require("express-jwt");
+const generateJWT = require("../jwt_handler"); // Importer la fonction generateJWT
 
-// Définition d'une fonction qui prend un tableau de rôles autorisés
-function authorize(roles) {
-    // Retourne une fonction middleware qui prend les objets de requête, de réponse, et la fonction next
-    return (req, res, next) => {
-        // Vérification si le rôle de l'utilisateur (req.auth.urole) fait partie des rôles autorisés
-        // ou si l'utilisateur est un admin
-        if (roles.includes(req.auth && req.auth.urole) || (req.auth && req.auth.urole === "admin")) {
-            next(); // Si autorisé, passe au middleware suivant
-        } else {
-            throw new UnauthorizedError("You do not have permission to perform this action."); // Sinon, lève une erreur d'autorisation
+const secret = "secret";
+const algorithms = ["HS256"];
+
+// Middleware to validate JWT and refresh token if valid
+const jwtMiddleware = (req, res, next) => {
+    expressJwt({
+        secret: secret,
+        algorithms: algorithms,
+        credentialsRequired: false,
+    })(req, res, (err) => {
+        if (err) {
+            return res.status(401).json({ message: "Invalid token" });
         }
+
+        // If token is valid, refresh it
+        if (req.auth) {
+            const newToken = generateJWT(req.auth.uid, req.auth.urole);
+
+            // Set the new token in the response header
+            res.setHeader("Authorization", `Bearer ${newToken}`);
+        }
+
+        // Proceed to the next middleware
+        next();
+    });
+};
+
+// Fonction qui prend un tableau de rôles autorisés
+function authorize(roles) {
+    return (req, res, next) => {
+        jwtMiddleware(req, res, (err) => {
+            if (err) {
+                return next(err);
+            }
+
+            if (roles.includes(req.auth && req.auth.urole) || (req.auth && req.auth.urole === "admin")) {
+                next();
+            } else {
+                throw new UnauthorizedError("You do not have permission to perform this action.");
+            }
+        });
     };
 }
 
-// Exportation de la fonction pour utilisation dans d'autres parties de l'application
 module.exports = authorize;

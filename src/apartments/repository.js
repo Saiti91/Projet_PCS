@@ -104,6 +104,22 @@ async function getApartmentTypeIdByName(name) {
     return result.apartmentstypes_id;
 }
 
+async function getApartmentTypes() {
+    const result = await db.manyOrNone("SELECT * FROM apartmentsTypes");
+    if (!result) {
+        throw new Error("No apartment types found.");
+    }
+    return result;
+}
+
+async function getApartmentFeatures() {
+    const result = await db.manyOrNone("SELECT * FROM apartmentFeatures");
+    if (!result) {
+        throw new Error("No apartment features found.");
+    }
+    return result;
+}
+
 async function getOne(id) {
     if (!id) {
         throw new Error("Apartment ID is required.");
@@ -341,5 +357,7 @@ module.exports = {
     getApartmentTypeIdByName,
     getApartmentImages,
     createCalendarForApartment,
-    saveImagePaths
+    saveImagePaths,
+    getApartmentFeatures,
+    getApartmentTypes
 };

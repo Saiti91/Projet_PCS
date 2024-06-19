@@ -127,10 +127,8 @@ CREATE TABLE servicesProviders
     servicesProviders_id serial PRIMARY KEY,
     name                 text,
     telephone            VARCHAR(15) CHECK (telephone ~ '^\+?\d{1,15}$'),
-    type                 int REFERENCES serviceTypes (serviceTypes_id) ON DELETE CASCADE,
     address_id           int REFERENCES address (address_id) ON DELETE CASCADE,
-    maxOperatingRadius   int,
-    price                float,
+    maxOperatingRadius   float8,
     employee_count       int
 );
 

@@ -1,3 +1,4 @@
+//jwt_handler.js
 // Importation du module jsonwebtoken, utilisé pour créer des JWT
 const jwt = require("jsonwebtoken");
 

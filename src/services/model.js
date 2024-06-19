@@ -3,19 +3,29 @@ const Joi = require("joi");
 
 // Schéma pour la création d'un service
 const createServicesSchema = Joi.object({
-    providerEmail: Joi.string().email().required(),
-    name: Joi.string().required(),
-    type: Joi.string().required(),
-    price: Joi.number().positive().required(),
-    provider: Joi.string().required(),
-    address: Joi.string().required(),
+    companyName: Joi.string().required(),
+    address: Joi.object({
+        number: Joi.number().required(),
+        street: Joi.string().required(),
+        CP: Joi.number().required(),
+        town: Joi.string().required(),
+    }).required(),
+    phone: Joi.string().required(),
+    services: Joi.array().items(Joi.object({
+        id: Joi.number().required(),
+        name: Joi.string().required(),
+        price: Joi.number().positive().required(),
+    })).min(1).required(),
+    imagePaths: Joi.array().items(Joi.string()).allow(null).optional()
 });
 
-// Schéma pour la création d'un type de service
 const createServicesTypeSchema = Joi.object({
     name: Joi.string().required(),
-    type: Joi.string().required(),
-    apartmentFeature: Joi.string().optional().allow(null),
+    features: Joi.array().items(Joi.string()).required()
+});
+const addServiceToProviderSchema = Joi.object({
+    serviceType_id: Joi.number().integer().required(),
+    price: Joi.number().positive().required()
 });
 
 // Schéma pour la mise à jour d'un service existant
@@ -26,19 +36,12 @@ const updateServicesSchema = Joi.object({
     address: Joi.string().optional(),
 }).min(1); // Au moins une des propriétés doit être mise à jour
 
-// Schéma pour la création d'une entreprise avec ses services
-const createProviderSchema = Joi.object({
-    name: Joi.string().required(),
-    telephone: Joi.string().pattern(/^\+?\d{1,15}$/).required(),
-    address: Joi.string().required(),
-    services: Joi.array().items(createServicesSchema).min(1).required()
-});
 
 // Exportation des schémas pour utilisation dans d'autres parties du code
 module.exports = {
     createServicesSchema,
     createServicesTypeSchema,
     updateServicesSchema,
-    createProviderSchema
+    addServiceToProviderSchema
 };
 
