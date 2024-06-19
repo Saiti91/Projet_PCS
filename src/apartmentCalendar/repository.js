@@ -2,7 +2,7 @@ const db = require("../common/db_handler");
 const generateDates = require('../common/middlewares/generateDate')
 
 async function createAvailabilities(apartmentId) {
-    const dates = generateDates(1); // Generate 720 dates from today
+    const dates = generateDates(360); // Generate 720 dates from today
 
     try {
         await db.tx(async t => {
@@ -15,7 +15,7 @@ async function createAvailabilities(apartmentId) {
             });
             await t.batch(insertAvailabilityQueries);
         });
-        console.log('Successfully inserted 720 availabilities');
+        console.log('Successfully inserted 360 availabilities');
     } catch (error) {
         console.error("Failed to create availabilities:", error);
         throw error;
