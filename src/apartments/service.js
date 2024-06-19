@@ -1,5 +1,5 @@
-//apartments/service.js
-const {createApartmentSchema} = require("./model");
+// apartments/service.js
+const {createApartmentSchema, updateApartmentSchema} = require("./model");
 const Repository = require("./repository");
 const UserRepository = require("../users/repository");
 const {InvalidArgumentError} = require("../common/service_errors");
@@ -20,7 +20,7 @@ async function createOne(location, files) {
         throw new Error("Location or address is not defined.");
     }
 
-    const { error } = createApartmentSchema.validate(location, { allowUnknown: true });
+    const {error} = createApartmentSchema.validate(location, {allowUnknown: true});
     if (error) {
         throw new InvalidArgumentError("Invalid location data!");
     }
@@ -31,7 +31,7 @@ async function createOne(location, files) {
     }
 
     if (owner.role === "customer") {
-        await UserRepository.updateOne(location.ownerEmail, { role: "owner" });
+        await UserRepository.updateOne(location.ownerEmail, {role: "owner"});
     }
 
     const apartmentType = await Repository.getApartmentTypeIdByName(location.apartmentsType);
@@ -58,7 +58,7 @@ async function createOne(location, files) {
 
             apartmentDir = path.join(__dirname, `../assets/housing/${apartmentId}`);
             if (!fs.existsSync(apartmentDir)) {
-                fs.mkdirSync(apartmentDir, { recursive: true });
+                fs.mkdirSync(apartmentDir, {recursive: true});
             }
 
             const imagePaths = [];
@@ -96,7 +96,7 @@ async function createOne(location, files) {
         if (apartmentId) {
             await Repository.deleteOne(apartmentId);
             if (apartmentDir && fs.existsSync(apartmentDir)) {
-                fs.rmSync(apartmentDir, { recursive: true});
+                fs.rmSync(apartmentDir, {recursive: true});
             }
         }
 
@@ -190,5 +190,14 @@ async function deleteOne(id) {
     }
 }
 
-// Exportation des fonctions pour utilisation dans d'autres parties de l'application
-module.exports = {createOne, getOne, getAll, updateOne, deleteOne, getCarousel, getApartmentImageById,getApartmentFeatures,getApartmentsTypes};
+module.exports = {
+    createOne,
+    getOne,
+    getAll,
+    updateOne,
+    deleteOne,
+    getCarousel,
+    getApartmentImageById,
+    getApartmentFeatures,
+    getApartmentsTypes
+};

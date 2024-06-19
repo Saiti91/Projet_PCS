@@ -1,14 +1,11 @@
-//services/controller.js
-const {Router} = require("express");
+const { Router } = require("express");
 const Service = require("./service");
 const NotFoundError = require("../common/http_errors").NotFoundError;
 const InternalServerError = require("../common/http_errors");
 const authorize = require("../common/middlewares/authorize_middleware");
-const {array} = require("joi");
 
 const controller = Router();
 
-// Route GET pour récupérer tous les services
 controller.get(
     "/",
     authorize(["staff", "customer", "owner", "provider", "admin"]),
@@ -19,8 +16,6 @@ controller.get(
     },
 );
 
-
-// Route GET pour récupérer tous les services
 controller.get(
     "/type",
     authorize(["staff", "customer", "owner", "provider", "admin"]),
@@ -31,7 +26,6 @@ controller.get(
     },
 );
 
-// Route GET pour récupérer un service spécifique par ID
 controller.get(
     "/:id",
     authorize(["staff", "customer", "owner", "provider"]),
@@ -50,7 +44,6 @@ controller.get(
     },
 );
 
-// Route GET pour récupérer les services disponibles autour d'un appartement
 controller.get(
     "/appartements/:appartementId/services",
     authorize(["staff", "customer", "owner", "provider"]),
@@ -62,8 +55,8 @@ controller.get(
                 return next(new NotFoundError(`Could not find apartment with id ${appartementId}`));
             }
 
-            const maxDistance = Number(process.env.PROVIDER_RANGE_KM || 10); // Default to 10 km if not set
-            const {latitude, longitude} = appartement;
+            const maxDistance = Number(process.env.PROVIDER_RANGE_KM || 10);
+            const { latitude, longitude } = appartement;
 
             const services = await Service.getServicesWithinRadius(latitude, longitude, maxDistance);
             res.json(services);
@@ -74,7 +67,6 @@ controller.get(
     }
 );
 
-// Route POST pour créer un nouveau serviceProvider
 controller.post(
     "/",
     authorize(["staff", "admin"]),
@@ -86,25 +78,6 @@ controller.post(
             .catch((err) => next(err));
     },
 );
-
-// controller.post('/', authorize(['staff', 'admin']), array('images'), (req, res, next) => {
-//     const files = req.files.map(file => ({
-//         originalname: file.originalname,
-//         mimetype: file.mimetype,
-//         path: file.path
-//     }));
-//
-//     const serviceData = {
-//         ...req.body,
-//         images: files
-//     };
-//
-//     Service.createOne(serviceData)
-//         .then(data => {
-//             res.status(201).json(data);
-//         })
-//         .catch(err => next(err));
-// });
 
 controller.post('/provider/:providerId/service', async (req, res, next) => {
     try {
@@ -120,7 +93,7 @@ controller.post('/provider/:providerId/service', async (req, res, next) => {
     } catch (err) {
         console.error('Error adding service to provider:', err);
 
-        if (err.code === '23505') { // PostgreSQL unique violation
+        if (err.code === '23505') {
             res.status(409).json({ error: 'Duplicate service for provider' });
         } else {
             res.status(500).json({ error: 'An error occurred while adding the service to the provider' });
@@ -129,22 +102,7 @@ controller.post('/provider/:providerId/service', async (req, res, next) => {
         next(err);
     }
 });
-controller.post(
-    '/',
-    authorize(['staff', 'admin']),
-    (req, res, next) => {
-        console.log('Request body:', req.body);
 
-        Service.createOne(req.body)
-            .then(data => {
-                res.status(201).json(data);
-            })
-            .catch(err => next(err));
-    }
-);
-
-
-// Route DELETE pour supprimer un service par ID
 controller.delete(
     "/:id",
     authorize(["owner", "customer", "staff", "provider"]),
@@ -163,7 +121,6 @@ controller.delete(
     },
 );
 
-// Route PATCH pour mettre à jour un service spécifique par ID
 controller.patch(
     "/:id",
     authorize(["owner", "customer", "staff", "provider"]),
