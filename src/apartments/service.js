@@ -114,6 +114,24 @@ async function getOne(id) {
     }
 }
 
+async function getApartmentsTypes() {
+    try {
+        return await Repository.getApartmentTypes();
+    } catch (error) {
+        console.error("Failed to retrieve apartment types:", error);
+        throw new Error("Failed to retrieve apartment types.");
+    }
+}
+
+async function getApartmentFeatures() {
+    try {
+        return await Repository.getApartmentFeatures();
+    } catch (error) {
+        console.error("Failed to retrieve apartment features:", error);
+        throw new Error("Failed to retrieve apartment features.");
+    }
+}
+
 // Fonction asynchrone pour récupérer tous les emplacements
 async function getAll() {
     try {
@@ -173,4 +191,4 @@ async function deleteOne(id) {
 }
 
 // Exportation des fonctions pour utilisation dans d'autres parties de l'application
-module.exports = {createOne, getOne, getAll, updateOne, deleteOne, getCarousel, getApartmentImageById};
+module.exports = {createOne, getOne, getAll, updateOne, deleteOne, getCarousel, getApartmentImageById,getApartmentFeatures,getApartmentsTypes};

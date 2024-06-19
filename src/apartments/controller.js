@@ -17,6 +17,24 @@ controller.get("/", async (req, res, next) => {
     }
 });
 
+controller.get("/apartmentsTypes", async (req, res, next) => {
+    try {
+        const data = await apartmentsServices.getApartmentsTypes();
+        res.json(data);
+    } catch (err) {
+        next(err);
+    }
+});
+
+controller.get("/apartmentFeatures", async (req, res, next) => {
+    try {
+        const data = await apartmentsServices.getApartmentFeatures();
+        res.json(data);
+    } catch (err) {
+        next(err);
+    }
+});
+
 controller.get("/carousel", async (req, res, next) => {
     try {
         const data = await apartmentsServices.getCarousel();

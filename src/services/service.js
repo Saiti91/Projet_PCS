@@ -1,57 +1,104 @@
 // services/service.js
-const { createServicesSchema, updateServicesSchema, createServicesTypeSchema, createProviderSchema } = require("./model");
+const {createServicesSchema, updateServicesSchema, createServicesTypeSchema,addServiceToProviderSchema} = require("./model");
 const Repository = require("./repository");
-const { calculateDistance } = require("../common/middlewares/distanceCalculation_middleware");
-const { InvalidArgumentError, UnauthorizedError } = require("../common/service_errors");
-const { getGeoCoordinates } = require("../common/middlewares/gps_middleware");
+const {calculateDistance} = require("../common/middlewares/distanceCalculation_middleware");
+const {InvalidArgumentError, UnauthorizedError} = require("../common/service_errors");
+const {getGeoCoordinates} = require("../common/middlewares/gps_middleware");
 
 async function createOne(serviceData) {
+    console.log('Service data received:', serviceData);
+
     const { value, error } = createServicesSchema.validate(serviceData);
     if (error) {
+        console.log('Validation error:', error.details);
         throw error;
     }
+    console.log('Validated data:', value);
 
-    const existingService = await Repository.getOneBy("name", value.name);
+    const existingService = await Repository.getOneBy('name', value.companyName);
     if (existingService) {
-        throw new InvalidArgumentError("This service name is already taken.");
+        console.log('Service name already taken:', value.companyName);
+        throw new InvalidArgumentError('This service name is already taken.');
     }
 
     const coordinates = await getGeoCoordinates(value.address);
     if (!coordinates) {
-        throw new Error("Failed to geocode address.");
+        console.log('Failed to geocode address:', value.address);
+        throw new Error('Failed to geocode address.');
     }
+    console.log('Geocoded coordinates:', coordinates);
 
     value.latitude = coordinates.latitude;
     value.longitude = coordinates.longitude;
 
-    return await Repository.createOne(value);
+    const addressId = await Repository.createAddress(value.address);
+    value.address_id = addressId;
+    console.log('Address ID:', addressId);
+
+    const serviceProviderId = await Repository.createServiceProvider(value);
+    console.log('Service provider ID:', serviceProviderId);
+
+    const serviceTypePromises = value.services.map(service =>
+        Repository.createServiceProviderToServiceType(serviceProviderId, service)
+    );
+    await Promise.all(serviceTypePromises);
+    console.log('Service types linked:', value.services);
+
+    return { message: 'Service created successfully', id: serviceProviderId };
 }
 
-async function createType(serviceData, apartmentFeature = null) {
-    const { value, error } = createServicesTypeSchema.validate(serviceData);
+async function createType(serviceData, features = []) {
+    // Validate the service data against the schema
+    const { value, error } = createServicesTypeSchema.validate({ ...serviceData, features });
     if (error) {
+        console.error('Validation error:', error);
         throw error;
     }
 
+    // Check if a service type with the same name already exists
     const existingServiceType = await Repository.getOneBy("name", value.name);
     if (existingServiceType) {
         throw new InvalidArgumentError("This service type name is already taken.");
     }
-
-    return await Repository.createType(value, apartmentFeature);
+    console.log("new service : ",value, features)
+    // Create a new service type
+    return await Repository.createServiceType(value, features);
 }
 
-async function addServiceToProvider(serviceProviderId, serviceData) {
-    const { value, error } = createServicesSchema.validate(serviceData);
+async function addServiceToProvider(providerId, serviceData) {
+    console.log('Service data received for adding to provider:', { providerId, serviceData });
+
+    // Validate the input data
+    const { value, error } = addServiceToProviderSchema.validate(serviceData);
     if (error) {
-        throw error;
+        console.error('Validation error:', error.details);
+        throw new Error(`Validation error: ${error.details.map(x => x.message).join(', ')}`);
     }
 
-    await Repository.addServiceToProvider(serviceProviderId, value);
+    console.log('Validated service data:', value);
+
+    // Check if the provider exists
+    const provider = await Repository.getServiceProviderById(providerId);
+    if (!provider) {
+        console.error('Provider not found:', providerId);
+        throw new Error('Provider not found');
+    }
+
+    console.log('Provider found:', provider);
+
+    try {
+        // Add the service to the provider
+        const result = await Repository.addServiceToProvider(providerId, value);
+        console.log('Service added to provider in database:', result);
+        return { message: 'Service added to provider successfully', result };
+    } catch (err) {
+        console.error('Error in adding service to provider:', err);
+        throw err;
+    }
 }
 
 async function createProviderWithServices(providerData) {
-    const { value: providerValue, error: providerError } = createProviderSchema.validate(providerData);
+    const {value: providerValue, error: providerError} = createProviderSchema.validate(providerData);
     if (providerError) {
         throw providerError;
     }
@@ -79,7 +126,7 @@ async function getOne(id, issuer) {
 
     const service = await Repository.getOne(id);
     if (service) {
-        return { ...service };
+        return {...service};
     } else return service;
 }
 
@@ -108,12 +155,17 @@ async function getServicesWithinRadius(lat, lon, maxDistance) {
 
 async function getAll() {
     const services = await Repository.getAll();
-    return services.map((service) => ({ ...service }));
+    return services.map((service) => ({...service}));
+}
+
+async function getAllType() {
+    const services = await Repository.getAllType();
+    return services.map((service) => ({...service}));
 }
 
 async function getAppartementById(id) {
     const appartement = await Repository.getAppartementById(id);
-    return { ...appartement };
+    return {...appartement};
 }
 
 async function updateOne(id, service, issuer) {
@@ -121,7 +173,7 @@ async function updateOne(id, service, issuer) {
         throw new UnauthorizedError("You cannot update services.");
     }
 
-    const { value, error } = updateServicesSchema.validate(service);
+    const {value, error} = updateServicesSchema.validate(service);
     if (error) {
         throw error;
     }
@@ -129,7 +181,7 @@ async function updateOne(id, service, issuer) {
     const newService = await Repository.updateOne(id, value);
 
     if (newService) {
-        return { ...newService };
+        return {...newService};
     }
 
     return newService;
@@ -153,5 +205,6 @@ module.exports = {
     getServicesWithinRadius,
     getAppartementById,
     updateOne,
-    deleteOne
+    deleteOne,
+    getAllType
 };

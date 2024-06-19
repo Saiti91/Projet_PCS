@@ -1,9 +1,10 @@
-// services/controller.js
-const { Router } = require("express");
+//services/controller.js
+const {Router} = require("express");
 const Service = require("./service");
 const NotFoundError = require("../common/http_errors").NotFoundError;
 const InternalServerError = require("../common/http_errors");
 const authorize = require("../common/middlewares/authorize_middleware");
+const {array} = require("joi");
 
 const controller = Router();
 
@@ -13,6 +14,18 @@ controller.get(
     authorize(["staff", "customer", "owner", "provider", "admin"]),
     (_req, res, next) => {
         Service.getAll()
+            .then((data) => res.json(data))
+            .catch((err) => next(err));
+    },
+);
+
+
+// Route GET pour récupérer tous les services
+controller.get(
+    "/type",
+    authorize(["staff", "customer", "owner", "provider", "admin"]),
+    (_req, res, next) => {
+        Service.getAllType()
             .then((data) => res.json(data))
             .catch((err) => next(err));
     },
@@ -50,7 +63,7 @@ controller.get(
             }
 
             const maxDistance = Number(process.env.PROVIDER_RANGE_KM || 10); // Default to 10 km if not set
-            const { latitude, longitude } = appartement;
+            const {latitude, longitude} = appartement;
 
             const services = await Service.getServicesWithinRadius(latitude, longitude, maxDistance);
             res.json(services);
@@ -61,7 +74,7 @@ controller.get(
     }
 );
 
-// Route POST pour créer un nouveau service
+// Route POST pour créer un nouveau serviceProvider
 controller.post(
     "/",
     authorize(["staff", "admin"]),
@@ -74,46 +87,62 @@ controller.post(
     },
 );
 
-// Route POST pour créer un nouveau type de service
+// controller.post('/', authorize(['staff', 'admin']), array('images'), (req, res, next) => {
+//     const files = req.files.map(file => ({
+//         originalname: file.originalname,
+//         mimetype: file.mimetype,
+//         path: file.path
+//     }));
+//
+//     const serviceData = {
+//         ...req.body,
+//         images: files
+//     };
+//
+//     Service.createOne(serviceData)
+//         .then(data => {
+//             res.status(201).json(data);
+//         })
+//         .catch(err => next(err));
+// });
+
+controller.post('/provider/:providerId/service', async (req, res, next) => {
+    try {
+        const { providerId } = req.params;
+        const { serviceType_id, price } = req.body;
+
+        console.log('Request received for adding service to provider:', { providerId, serviceType_id, price });
+
+        const result = await Service.addServiceToProvider(providerId, { serviceType_id, price });
+
+        console.log('Service added to provider successfully:', result);
+        res.status(201).json(result);
+    } catch (err) {
+        console.error('Error adding service to provider:', err);
+
+        if (err.code === '23505') { // PostgreSQL unique violation
+            res.status(409).json({ error: 'Duplicate service for provider' });
+        } else {
+            res.status(500).json({ error: 'An error occurred while adding the service to the provider' });
+        }
+
+        next(err);
+    }
+});
 controller.post(
-    "/type",
-    authorize(["staff", "admin"]),
+    '/',
+    authorize(['staff', 'admin']),
     (req, res, next) => {
-        const { apartmentFeature, ...typeData } = req.body;
-        Service.createType(typeData, apartmentFeature)
-            .then((data) => {
+        console.log('Request body:', req.body);
+
+        Service.createOne(req.body)
+            .then(data => {
                 res.status(201).json(data);
             })
-            .catch((err) => next(err));
-    },
+            .catch(err => next(err));
+    }
 );
 
-// Route POST pour ajouter un service à une entreprise existante
-controller.post(
-    "/provider/:providerId/service",
-    authorize(["staff", "admin"]),
-    (req, res, next) => {
-        const providerId = Number(req.params.providerId);
-        Service.addServiceToProvider(providerId, req.body)
-            .then(() => {
-                res.status(201).send();
-            })
-            .catch((err) => next(err));
-    },
-);
-
-// Route POST pour créer une nouvelle entreprise avec ses services
-controller.post(
-    "/provider",
-    authorize(["staff", "admin"]),
-    (req, res, next) => {
-        Service.createProviderWithServices(req.body)
-            .then((data) => {
-                res.status(201).json(data);
-            })
-            .catch((err) => next(err));
-    },
-);
 
 // Route DELETE pour supprimer un service par ID
 controller.delete(
