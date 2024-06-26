@@ -1,5 +1,5 @@
-const { UnauthorizedError } = require("../service_errors");
-const { expressjwt: expressJwt } = require("express-jwt");
+const {UnauthorizedError} = require("../service_errors");
+const {expressjwt: expressJwt} = require("express-jwt");
 const generateJWT = require("../jwt_handler"); // Importer la fonction generateJWT
 
 const secret = "secret";
@@ -13,7 +13,7 @@ const jwtMiddleware = (req, res, next) => {
         credentialsRequired: false,
     })(req, res, (err) => {
         if (err) {
-            return res.status(401).json({ message: "Invalid token" });
+            return res.status(401).json({message: "Invalid token"});
         }
 
         // If token is valid, refresh it

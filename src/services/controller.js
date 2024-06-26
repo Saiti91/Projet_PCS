@@ -1,7 +1,7 @@
-const { Router } = require("express");
+const {Router} = require("express");
 const Service = require("./service");
-const NotFoundError = require("../common/http_errors").NotFoundError;
-const InternalServerError = require("../common/http_errors");
+const Repository = require("./repository");
+const {NotFoundError, InternalServerError} = require("../common/http_errors");
 const authorize = require("../common/middlewares/authorize_middleware");
 
 const controller = Router();
@@ -56,7 +56,7 @@ controller.get(
             }
 
             const maxDistance = Number(process.env.PROVIDER_RANGE_KM || 10);
-            const { latitude, longitude } = appartement;
+            const {latitude, longitude} = appartement;
 
             const services = await Service.getServicesWithinRadius(latitude, longitude, maxDistance);
             res.json(services);
@@ -79,29 +79,45 @@ controller.post(
     },
 );
 
-controller.post('/provider/:providerId/service', async (req, res, next) => {
-    try {
-        const { providerId } = req.params;
-        const { serviceType_id, price } = req.body;
+controller.post(
+    '/provider/:provider_id/service',
+    authorize(["staff", "admin"]),
+    async (req, res, next) => {
+        try {
+            const {provider_id, serviceType_id, price} = req.body;
+            console.log('Request received for adding service to provider:', {provider_id, serviceType_id, price});
 
-        console.log('Request received for adding service to provider:', { providerId, serviceType_id, price });
+            const result = await Service.addServiceToProvider(provider_id, serviceType_id, price);
 
-        const result = await Service.addServiceToProvider(providerId, { serviceType_id, price });
-
-        console.log('Service added to provider successfully:', result);
-        res.status(201).json(result);
-    } catch (err) {
-        console.error('Error adding service to provider:', err);
-
-        if (err.code === '23505') {
-            res.status(409).json({ error: 'Duplicate service for provider' });
-        } else {
-            res.status(500).json({ error: 'An error occurred while adding the service to the provider' });
+            console.log('Service added to provider successfully:', result);
+            res.status(201).json(result);
+        } catch (err) {
+            console.error('Error adding service to provider:', err);
+            if (err.code === '23505') {
+                res.status(409).json({error: 'Duplicate service for provider'});
+            } else if (err.message.includes('Validation error')) {
+                res.status(400).json({error: err.message});
+            } else if (err.message.includes('Provider not found')) {
+                res.status(404).json({error: err.message});
+            } else {
+                res.status(500).json({error: 'An error occurred while adding the service to the provider'});
+            }
+            next(err);
         }
-
-        next(err);
     }
-});
+);
+
+controller.post(
+    "/type",
+    authorize(["staff", "admin"]),
+    (req, res, next) => {
+        Service.createType(req.body)
+            .then((data) => {
+                res.status(201).json(data);
+            })
+            .catch((err) => next(err));
+    },
+);
 
 controller.delete(
     "/:id",

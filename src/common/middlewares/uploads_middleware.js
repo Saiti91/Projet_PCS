@@ -14,7 +14,7 @@ const storage = multer.diskStorage({
             uploadPath = path.join(__dirname, '../../assets/tmp');
         }
         if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
+            fs.mkdirSync(uploadPath, {recursive: true});
         }
         cb(null, uploadPath);
     },
@@ -26,7 +26,7 @@ const storage = multer.diskStorage({
 // Initialize upload
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 1000000 }, // Limit file size to 1MB
+    limits: {fileSize: 5000000}, // Limit file size to 1MB
     fileFilter: (req, file, cb) => {
         checkFileType(file, cb);
     }
