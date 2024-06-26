@@ -24,7 +24,7 @@ const port = 80;
 app.use(bodyParser.json());
 app.use(cors({
     origin: 'http://localhost:5173', // Remplacez par le domaine de votre application front-end
-    methods: 'GET,POST,PUT,DELETE,OPTIONS',
+    methods: 'GET,POST,PUT,DELETE,OPTIONS,PATCH',
     allowedHeaders: 'Content-Type,Authorization',
     exposedHeaders: 'Authorization'
 }));

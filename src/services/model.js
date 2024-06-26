@@ -3,7 +3,7 @@ const Joi = require("joi");
 
 // Schéma pour la création d'un service
 const createServicesSchema = Joi.object({
-    companyName: Joi.string().required(),
+    name: Joi.string().required(),
     address: Joi.object({
         number: Joi.number().required(),
         street: Joi.string().required(),
@@ -15,8 +15,7 @@ const createServicesSchema = Joi.object({
         id: Joi.number().required(),
         name: Joi.string().required(),
         price: Joi.number().positive().required(),
-    })).min(1).required(),
-    imagePaths: Joi.array().items(Joi.string()).allow(null).optional()
+    })).min(1).required()
 });
 
 const createServicesTypeSchema = Joi.object({
@@ -24,6 +23,7 @@ const createServicesTypeSchema = Joi.object({
     features: Joi.array().items(Joi.string()).required()
 });
 const addServiceToProviderSchema = Joi.object({
+    provider_id: Joi.number().integer().required(),
     serviceType_id: Joi.number().integer().required(),
     price: Joi.number().positive().required()
 });

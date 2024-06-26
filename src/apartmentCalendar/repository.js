@@ -1,9 +1,8 @@
 const db = require("../common/db_handler");
-const generateDates = require('../common/middlewares/generateDate')
+const generateDates = require('../common/middlewares/generateDate');
 
 async function createAvailabilities(apartmentId) {
-    const dates = generateDates(360); // Generate 720 dates from today
-
+    const dates = generateDates(360); // Generate 360 dates from today
     try {
         await db.tx(async t => {
             const insertAvailabilityQueries = dates.map(date => {
@@ -22,17 +21,22 @@ async function createAvailabilities(apartmentId) {
     }
 }
 
-async function getById(apartmentId) {
+async function getByApartmentId(apartmentId) {
+    if (!apartmentId) {
+        throw new Error("Apartment ID is required.");
+    }
     try {
-        return await db.any(
-            `SELECT *
-             FROM apartmentAvailabilities
-             WHERE apartment_id = $1
-             ORDER BY date`,
-            [apartmentId]
-        );
+        const calendarQuery = `
+            SELECT json_build_object('available', appartCalendar.available, 'date', appartCalendar.date) AS entry
+            FROM apartmentAvailabilities appartCalendar
+            WHERE appartCalendar.apartment_id = $1
+              AND appartCalendar.available = false
+            ORDER BY appartCalendar.date;
+        `;
+        const calendarEntries = await db.any(calendarQuery, [apartmentId]);
+        return calendarEntries.map(row => row.entry);
     } catch (error) {
-        console.error("Failed to retrieve availabilities:", error);
+        console.error(`Failed to retrieve calendar for apartment ID ${apartmentId}:`, error);
         throw error;
     }
 }
@@ -86,10 +90,9 @@ async function deleteAvailabilitiesByApartmentId(apartmentId) {
     }
 }
 
-// Exportation des fonctions pour utilisation dans d'autres parties du code
 module.exports = {
     createAvailabilities,
-    getById,
+    getById: getByApartmentId,
     getAllAvailabilities,
     updateAvailabilities,
     deleteAvailabilitiesByApartmentId

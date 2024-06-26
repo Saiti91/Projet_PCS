@@ -11,6 +11,7 @@ const updateApartmentAvailabilitySchema = Joi.object({
     })).required(),
     apartment_id: Joi.number().integer().positive().required()
 });
+
 module.exports = {
     createApartmentAvailabilitySchema,
     updateApartmentAvailabilitySchema,

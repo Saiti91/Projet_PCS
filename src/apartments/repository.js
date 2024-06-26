@@ -140,39 +140,31 @@ async function getOne(id) {
                    addr.town,
                    a.capacity,
                    a.apartmentsType_id,
-                   at.name                                               AS apartment_type,
+                   at.name AS apartment_type,
                    a.numberOfRoom,
                    a.price,
-                   ARRAY_AGG(DISTINCT ai.path)                           AS images,
-                   ARRAY_AGG(DISTINCT af.name)                           AS features,
-                   u.email                                               AS owner_email,
-                   JSON_AGG(appartCalendar ORDER BY appartCalendar.date) AS calendar
+                   ARRAY_AGG(DISTINCT ai.path) AS images,
+                   ARRAY_AGG(DISTINCT af.name) AS features,
+                   u.email AS owner_email
             FROM apartments a
-                     JOIN
-                 address addr ON a.address_id = addr.address_id
-                     JOIN
-                 users u ON a.owner_id = u.users_id
-                     LEFT JOIN
-                 apartmentsImage ai ON a.apartments_id = ai.apartment_id
-                     LEFT JOIN
-                 apartmentToFeatures atf ON a.apartments_id = atf.apartment_id
-                     LEFT JOIN
-                 apartmentFeatures af ON atf.feature_id = af.feature_id
-                     LEFT JOIN
-                 apartmentsTypes at
-                 ON a.apartmentsType_id = at.apartmentsTypes_id
-                     LEFT JOIN
-                 apartmentAvailabilities appartCalendar ON a.apartments_id = appartCalendar.apartment_id
+            JOIN address addr ON a.address_id = addr.address_id
+            JOIN users u ON a.owner_id = u.users_id
+            LEFT JOIN apartmentsImage ai ON a.apartments_id = ai.apartment_id
+            LEFT JOIN apartmentToFeatures atf ON a.apartments_id = atf.apartment_id
+            LEFT JOIN apartmentFeatures af ON atf.feature_id = af.feature_id
+            LEFT JOIN apartmentsTypes at ON a.apartmentsType_id = at.apartmentsTypes_id
             WHERE a.apartments_id = $1
             GROUP BY a.apartments_id, addr.street, addr.building, addr.apartmentNumber, addr.number,
-                     addr.addressComplement, addr.CP, addr.town, at.name, u.email
+                     addr.addressComplement, addr.CP, addr.town, at.name, u.email;
         `;
 
         const apartment = await db.oneOrNone(apartmentQuery, [id]);
-
         if (!apartment) {
             throw new Error(`No apartment found with ID ${id}`);
         }
+
+        const apartCalendar = await calendar.getById(id);
+        apartment.calendar = apartCalendar;
 
         return apartment;
     } catch (error) {
@@ -180,6 +172,7 @@ async function getOne(id) {
         throw error;
     }
 }
+
 
 async function getAll() {
     try {

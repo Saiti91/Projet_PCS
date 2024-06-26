@@ -1,5 +1,4 @@
 // apartments/controller.js
-
 const {Router} = require("express");
 const apartmentsServices = require("./service");
 const {NotFoundError} = require("../common/http_errors");
