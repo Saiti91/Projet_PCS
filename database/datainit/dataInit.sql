@@ -1,3 +1,11 @@
+
+-- Insérer les états initiaux dans availability_status
+INSERT INTO availability_status (status_name) VALUES
+                                                  ('available'),
+                                                  ('unavailable'),
+                                                  ('reserved'),
+                                                  ('pending');
+
 -- Insertions for the address table
 INSERT INTO address (longitude, latitude, number, addressComplement, building, apartmentNumber, street, CP, town)
 VALUES

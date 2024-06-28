@@ -120,12 +120,29 @@ async function createServiceType(type, features = []) {
 
 async function getOne(id) {
     try {
-        return await db.oneOrNone("SELECT * FROM servicesProviders WHERE servicesProviders_id = $1", [id]);
+        const query = `
+            SELECT sp.*,
+                   a.*,
+                   (
+                       SELECT json_agg(row_to_json(s))
+                       FROM (
+                                SELECT st.name, sptst.price
+                                FROM serviceProviderToServiceTypes sptst
+                                         JOIN serviceTypes st ON sptst.serviceType_id = st.serviceTypes_id
+                                WHERE sptst.serviceProvider_id = sp.servicesProviders_id
+                            ) s
+                   ) AS services
+            FROM servicesProviders sp
+                     LEFT JOIN address a ON sp.address_id = a.address_id
+            WHERE sp.servicesProviders_id = $1
+        `;
+        return await db.oneOrNone(query, [id]);
     } catch (err) {
         console.error('Error fetching one service provider:', err);
         throw err;
     }
 }
+
 
 async function getOneBy(attribute, value) {
     try {
