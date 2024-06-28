@@ -7,6 +7,12 @@ CREATE TYPE commentaryType AS ENUM ('apartment', 'serviceProvider');
 -- version insensible à la casses du type de données text standard.
 CREATE EXTENSION citext;
 
+-- Table pour les états de disponibilité
+CREATE TABLE availability_status (
+                                     id SERIAL PRIMARY KEY,
+                                     status_name VARCHAR(50) UNIQUE NOT NULL
+);
+
 -- Addresses
 CREATE TABLE address
 (
@@ -182,7 +188,7 @@ CREATE TABLE commentaryImages
 CREATE TABLE providerAvailabilities
 (
     providerAvailabilities_id serial PRIMARY KEY,
-    available                 boolean NOT NULL,
+    status_id                 int REFERENCES availability_status(id) NOT NULL,
     date                      date    NOT NULL,
     provider_id               int REFERENCES servicesProviders (servicesProviders_id) ON DELETE CASCADE
 );
@@ -191,7 +197,7 @@ CREATE TABLE providerAvailabilities
 CREATE TABLE apartmentAvailabilities
 (
     apartmentAvailabilities_id serial PRIMARY KEY,
-    available                  boolean NOT NULL,
+    status_id                  int REFERENCES availability_status(id) NOT NULL,
     date                       date    NOT NULL,
     apartment_id               int REFERENCES apartments (apartments_id) ON DELETE CASCADE
 );
