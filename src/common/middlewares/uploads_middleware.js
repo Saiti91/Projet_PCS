@@ -5,9 +5,16 @@ const fs = require('fs');
 // Set storage engine
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const uploadPath = path.join(__dirname, '../../assets/tmp');
+        let uploadPath;
+        if (req.path.includes('serviceProvider')) {
+            uploadPath = path.join(__dirname, '../../assets/serviceProviders');
+        } else if (req.path.includes('apartment')) {
+            uploadPath = path.join(__dirname, '../../assets/apartments');
+        } else {
+            uploadPath = path.join(__dirname, '../../assets/tmp');
+        }
         if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
+            fs.mkdirSync(uploadPath, {recursive: true});
         }
         cb(null, uploadPath);
     },
@@ -19,7 +26,7 @@ const storage = multer.diskStorage({
 // Initialize upload
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 1000000 }, // Limit file size to 1MB
+    limits: {fileSize: 5000000}, // Limit file size to 1MB
     fileFilter: (req, file, cb) => {
         checkFileType(file, cb);
     }

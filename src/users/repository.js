@@ -100,14 +100,13 @@ async function updateOne(id, user) {
         .map((k) => ` ${k} = $<${k}> `)
         .join(",");
 
-    const modified = await db.oneOrNone(
+    return await db.oneOrNone(
         `UPDATE users
          SET ${attrsStr}
-         WHERE users_id = ${id} RETURNING *;`,
+         WHERE users_id = ${id}
+         RETURNING *;`,
         {id, ...user}
     );
-
-    return modified;
 }
 
 // Supprime un utilisateur par son ID

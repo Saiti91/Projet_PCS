@@ -1,5 +1,4 @@
 // apartments/controller.js
-
 const {Router} = require("express");
 const apartmentsServices = require("./service");
 const {NotFoundError} = require("../common/http_errors");
@@ -11,6 +10,24 @@ const controller = Router();
 controller.get("/", async (req, res, next) => {
     try {
         const data = await apartmentsServices.getAll();
+        res.json(data);
+    } catch (err) {
+        next(err);
+    }
+});
+
+controller.get("/apartmentsTypes", async (req, res, next) => {
+    try {
+        const data = await apartmentsServices.getApartmentsTypes();
+        res.json(data);
+    } catch (err) {
+        next(err);
+    }
+});
+
+controller.get("/apartmentFeatures", async (req, res, next) => {
+    try {
+        const data = await apartmentsServices.getApartmentFeatures();
         res.json(data);
     } catch (err) {
         next(err);

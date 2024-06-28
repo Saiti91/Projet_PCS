@@ -1,13 +1,11 @@
-// services/controller.js
-const { Router } = require("express");
+const {Router} = require("express");
 const Service = require("./service");
-const NotFoundError = require("../common/http_errors").NotFoundError;
-const InternalServerError = require("../common/http_errors");
+const Repository = require("./repository");
+const {NotFoundError, InternalServerError} = require("../common/http_errors");
 const authorize = require("../common/middlewares/authorize_middleware");
 
 const controller = Router();
 
-// Route GET pour récupérer tous les services
 controller.get(
     "/",
     authorize(["staff", "customer", "owner", "provider", "admin"]),
@@ -18,7 +16,16 @@ controller.get(
     },
 );
 
-// Route GET pour récupérer un service spécifique par ID
+controller.get(
+    "/type",
+    authorize(["staff", "customer", "owner", "provider", "admin"]),
+    (_req, res, next) => {
+        Service.getAllType()
+            .then((data) => res.json(data))
+            .catch((err) => next(err));
+    },
+);
+
 controller.get(
     "/:id",
     authorize(["staff", "customer", "owner", "provider"]),
@@ -37,7 +44,6 @@ controller.get(
     },
 );
 
-// Route GET pour récupérer les services disponibles autour d'un appartement
 controller.get(
     "/appartements/:appartementId/services",
     authorize(["staff", "customer", "owner", "provider"]),
@@ -49,8 +55,8 @@ controller.get(
                 return next(new NotFoundError(`Could not find apartment with id ${appartementId}`));
             }
 
-            const maxDistance = Number(process.env.PROVIDER_RANGE_KM || 10); // Default to 10 km if not set
-            const { latitude, longitude } = appartement;
+            const maxDistance = Number(process.env.PROVIDER_RANGE_KM || 10);
+            const {latitude, longitude} = appartement;
 
             const services = await Service.getServicesWithinRadius(latitude, longitude, maxDistance);
             res.json(services);
@@ -61,7 +67,6 @@ controller.get(
     }
 );
 
-// Route POST pour créer un nouveau service
 controller.post(
     "/",
     authorize(["staff", "admin"]),
@@ -74,13 +79,39 @@ controller.post(
     },
 );
 
-// Route POST pour créer un nouveau type de service
+controller.post(
+    '/provider/:provider_id/service',
+    authorize(["staff", "admin"]),
+    async (req, res, next) => {
+        try {
+            const {provider_id, serviceType_id, price} = req.body;
+            console.log('Request received for adding service to provider:', {provider_id, serviceType_id, price});
+
+            const result = await Service.addServiceToProvider(provider_id, serviceType_id, price);
+
+            console.log('Service added to provider successfully:', result);
+            res.status(201).json(result);
+        } catch (err) {
+            console.error('Error adding service to provider:', err);
+            if (err.code === '23505') {
+                res.status(409).json({error: 'Duplicate service for provider'});
+            } else if (err.message.includes('Validation error')) {
+                res.status(400).json({error: err.message});
+            } else if (err.message.includes('Provider not found')) {
+                res.status(404).json({error: err.message});
+            } else {
+                res.status(500).json({error: 'An error occurred while adding the service to the provider'});
+            }
+            next(err);
+        }
+    }
+);
+
 controller.post(
     "/type",
     authorize(["staff", "admin"]),
     (req, res, next) => {
-        const { apartmentFeature, ...typeData } = req.body;
-        Service.createType(typeData, apartmentFeature)
+        Service.createType(req.body)
             .then((data) => {
                 res.status(201).json(data);
             })
@@ -88,34 +119,6 @@ controller.post(
     },
 );
 
-// Route POST pour ajouter un service à une entreprise existante
-controller.post(
-    "/provider/:providerId/service",
-    authorize(["staff", "admin"]),
-    (req, res, next) => {
-        const providerId = Number(req.params.providerId);
-        Service.addServiceToProvider(providerId, req.body)
-            .then(() => {
-                res.status(201).send();
-            })
-            .catch((err) => next(err));
-    },
-);
-
-// Route POST pour créer une nouvelle entreprise avec ses services
-controller.post(
-    "/provider",
-    authorize(["staff", "admin"]),
-    (req, res, next) => {
-        Service.createProviderWithServices(req.body)
-            .then((data) => {
-                res.status(201).json(data);
-            })
-            .catch((err) => next(err));
-    },
-);
-
-// Route DELETE pour supprimer un service par ID
 controller.delete(
     "/:id",
     authorize(["owner", "customer", "staff", "provider"]),
@@ -134,7 +137,6 @@ controller.delete(
     },
 );
 
-// Route PATCH pour mettre à jour un service spécifique par ID
 controller.patch(
     "/:id",
     authorize(["owner", "customer", "staff", "provider"]),
