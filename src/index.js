@@ -1,7 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const errorHandlingMiddleware = require("./common/middlewares/error_middleware");
-const appartementsController = require("./apartments/controller");
+const apartmentsController = require("./apartments/controller");
 const usersController = require("./users/controller");
 const reservationsController = require("./reservations/controller");
 const servicesController = require("./services/controller");
@@ -46,7 +46,7 @@ app.get("/", (_req, res) => {
 
 // importation des autres scripts
 app.use("/apartmentsCalendar", apartmentCalendarController);
-app.use("/apartments", appartementsController);
+app.use("/apartments", apartmentsController);
 app.use("/auth", authController);
 app.use("/commentary", commentaryController);
 app.use("/inventory", inventoryController);

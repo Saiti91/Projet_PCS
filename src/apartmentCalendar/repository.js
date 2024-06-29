@@ -4,12 +4,13 @@ const generateDates = require('../common/middlewares/generateDate');
 async function createAvailabilities(apartmentId) {
     const dates = generateDates(360); // Generate 360 dates from today
     try {
+        const statusId = await db.one('SELECT id FROM availability_status WHERE status_name = $1', ['available']);
         await db.tx(async t => {
             const insertAvailabilityQueries = dates.map(date => {
                 return t.none(
-                    `INSERT INTO apartmentAvailabilities (date, available, apartment_id)
+                    `INSERT INTO apartmentAvailabilities (date, status_id, apartment_id)
                      VALUES ($1, $2, $3)`,
-                    [date, true, apartmentId]
+                    [date, statusId.id, apartmentId]
                 );
             });
             await t.batch(insertAvailabilityQueries);
@@ -20,20 +21,20 @@ async function createAvailabilities(apartmentId) {
         throw error;
     }
 }
-
 async function getByApartmentId(apartmentId) {
     if (!apartmentId) {
         throw new Error("Apartment ID is required.");
     }
     try {
+        const statusId = await db.one('SELECT id FROM availability_status WHERE status_name = $1', ['unavailable']);
         const calendarQuery = `
-            SELECT json_build_object('available', appartCalendar.available, 'date', appartCalendar.date) AS entry
+            SELECT json_build_object('status_id', appartCalendar.status_id, 'date', appartCalendar.date) AS entry
             FROM apartmentAvailabilities appartCalendar
             WHERE appartCalendar.apartment_id = $1
-              AND appartCalendar.available = false
+              AND appartCalendar.status_id = $2
             ORDER BY appartCalendar.date;
         `;
-        const calendarEntries = await db.any(calendarQuery, [apartmentId]);
+        const calendarEntries = await db.any(calendarQuery, [apartmentId, statusId.id]);
         return calendarEntries.map(row => row.entry);
     } catch (error) {
         console.error(`Failed to retrieve calendar for apartment ID ${apartmentId}:`, error);
@@ -57,13 +58,14 @@ async function getAllAvailabilities() {
 async function updateAvailabilities(apartmentId, availabilities) {
     try {
         await db.tx(async t => {
-            const updateQueries = availabilities.map(({date, available}) => {
+            const updateQueries = availabilities.map(async ({date, status}) => {
+                const statusId = await t.one('SELECT id FROM availability_status WHERE status_name = $1', [status]);
                 return t.none(
                     `UPDATE apartmentAvailabilities
-                     SET available = $1
+                     SET status_id = $1
                      WHERE apartment_id = $2
                        AND date = $3`,
-                    [available, apartmentId, date]
+                    [statusId.id, apartmentId, date]
                 );
             });
             await t.batch(updateQueries);
@@ -97,3 +99,4 @@ module.exports = {
     updateAvailabilities,
     deleteAvailabilitiesByApartmentId
 };
+

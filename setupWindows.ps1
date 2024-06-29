@@ -25,10 +25,14 @@ docker exec -i PCS_postgres psql -U postgres -f /docker-entrypoint-initdb.d/data
 $nodeInstalled = Get-Command node -ErrorAction SilentlyContinue
 if (-not $nodeInstalled)
 {
-    Write-Host "Node.js n'est pas installé. Installation de Node.js..."
-    Set-ExecutionPolicy Bypass -Scope Process -Force
-    Invoke-WebRequest -useb get.scoop.sh | Invoke-Expression
-    scoop install nodejs
+    # installs fnm (Fast Node Manager)
+    winget install Schniz.fnm
+    # download and install Node.js
+    fnm use --install-if-missing 22
+    # verifies the right Node.js version is in the environment
+    node -v # should print `v22.3.0`
+    # verifies the right NPM version is in the environment
+    npm -v # should print `10.8.1`n
 }
 
 # Installer les dépendances du projet
