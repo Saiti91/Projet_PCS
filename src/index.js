@@ -12,6 +12,8 @@ const serviceCalendarController = require("./serviceCalendar/controller");
 const inventoryController = require("./inventory/controller");
 const ticketsController = require("./tickets/controller");
 const invoicesController = require("./invoices/controller");
+const stripeRoutes = require('./stripeRoutes');
+
 
 const idParamGuard = require("./common/middlewares/id_param_guard_middleware");
 const authMiddleware = require("./common/middlewares/auth_middleware");
@@ -56,6 +58,9 @@ app.use("/servicesCalendar", serviceCalendarController);
 app.use("/services", servicesController);
 app.use("/tickets", ticketsController);
 app.use("/users", usersController);
+
+//Pour stripe
+app.use('/stripe', stripeRoutes);
 
 // Middleware de gestion des erreurs
 app.use(errorHandlingMiddleware);
