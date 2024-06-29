@@ -12,7 +12,7 @@ const serviceCalendarController = require("./serviceCalendar/controller");
 const inventoryController = require("./inventory/controller");
 const ticketsController = require("./tickets/controller");
 const invoicesController = require("./invoices/controller");
-const stripeRoutes = require('./stripeRoutes');
+const stripeRoutes = require('./stripe/stripeRoutes');
 
 
 const idParamGuard = require("./common/middlewares/id_param_guard_middleware");
