@@ -1,9 +1,8 @@
-// stripeRoutes.js
-const {Router} = require("express");
+const { Router } = require("express");
 const stripe = require('stripe')('sk_test_51PX7r7FYikej8zQ92PzU69B6ZFGBUmAmGdNe7wy2Xn12XKbyiZSG6f6WongLxfkKlK3Dzvh1I9olr6rmMFAzPmq700j0Yakkws');
 const router = Router();
 
-router.post('/stripe/charge', async (req, res) => {
+router.post('/charge', async (req, res) => {
     try {
         const { paymentMethodId } = req.body;
 
@@ -25,3 +24,5 @@ router.post('/stripe/charge', async (req, res) => {
         res.status(500).send({ error: error.message });
     }
 });
+
+module.exports = router;
