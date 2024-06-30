@@ -1,22 +1,46 @@
 // server.js
-const express = require('express');
-const bodyParser = require('body-parser');
 const db = require("../common/db_handler");
 
 // Fonction asynchrone pour créer une nouvelle entrée de réservation dans la base de données
-async function createOne(location) {
-    const attributesString = Object.keys(location).join(",");
-    const valuesString = Object.keys(location).map((_, i) => `$${i + 1}`).join(",");
+async function createOne(reservation, services) {
+    const attributesString = Object.keys(reservation).join(",");
+    const valuesString = Object.keys(reservation).map((_, i) => `$${i + 1}`).join(",");
+    const values = Object.values(reservation);
+    console.log("values", values);
+    const client = await db.connect();
 
-    const values = Object.values(location);
+    try {
+        await client.query('BEGIN');
+        console.log("values", valuesString);
+        const newReservation = await client.one(
+            `INSERT INTO reservations(${attributesString})
+             VALUES (${valuesString})
+             RETURNING *;`,
+            values
+        );
 
-    return await db.one(
-        `INSERT INTO reservations(${attributesString})
-         VALUES (${valuesString})
-         RETURNING *;`,
-        values
-    );
+        // Insérer les services liés à la réservation
+        for (const service of services) {
+            const { serviceType_id, serviceProvider_id } = service;
+            await client.none(
+                `INSERT INTO reservation_services (reservation_id, serviceType_id, serviceProvider_id)
+                 VALUES ($1, $2, $3);`,
+                [newReservation.reservation_id, serviceType_id, serviceProvider_id]
+            );
+        }
+
+        await client.query('COMMIT');
+        return newReservation;
+    } catch (error) {
+        await client.query('ROLLBACK');
+        throw error;
+    } finally {
+        if (client.release) {
+            client.release();
+        }
+    }
 }
+
 
 // Fonction asynchrone pour récupérer une réservation par son identifiant
 async function getOne(id) {
@@ -80,7 +104,7 @@ async function checkAvailability(start, end, appartId) {
         SELECT COUNT(*)
         FROM generate_series($1::date, $2::date, '1 day') AS g(day)
                  LEFT JOIN apartmentAvailabilities a ON a.date = g.day AND a.apartment_id = $3
-        WHERE a.available IS NOT TRUE;
+        WHERE a.status_id = (SELECT id FROM availability_status WHERE status_name = 'unavailable');
     `;
 
     try {

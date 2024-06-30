@@ -27,7 +27,7 @@ async function login(loginForm) {
     // Utilisez des fonctions de hashage sécurisées comme bcrypt pour comparer les mots de passe
 
     // Génération du jeton JWT pour l'utilisateur et retour du jeton
-    return generateJWT(user.id, user.role);
+    return generateJWT(user.users_id, user.role);
 }
 
 // Fonction asynchrone pour l'enregistrement des utilisateurs

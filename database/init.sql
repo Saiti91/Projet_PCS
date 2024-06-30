@@ -8,9 +8,10 @@ CREATE TYPE commentaryType AS ENUM ('apartment', 'serviceProvider');
 CREATE EXTENSION citext;
 
 -- Table pour les états de disponibilité
-CREATE TABLE availability_status (
-                                     id SERIAL PRIMARY KEY,
-                                     status_name VARCHAR(50) UNIQUE NOT NULL
+CREATE TABLE availability_status
+(
+    id          SERIAL PRIMARY KEY,
+    status_name VARCHAR(50) UNIQUE NOT NULL
 );
 
 -- Addresses
@@ -117,15 +118,15 @@ CREATE TABLE serviceTypeToFeatures
 -- Reservations
 CREATE TABLE reservations
 (
-    reservations_id serial PRIMARY KEY,
-    created_at      timestamp DEFAULT NOW(),
-    apartment_id    int REFERENCES apartments (apartments_id) ON DELETE CASCADE,
-    customer        int REFERENCES users (users_id) ON DELETE CASCADE,
-    date_start      date NOT NULL,
-    date_end        date NOT NULL,
-    price           int CHECK (price >= 0),
+    reservation_id SERIAL PRIMARY KEY,
+    customer       INT REFERENCES users (users_id) ON DELETE CASCADE,
+    apartment_id   INT REFERENCES apartments (apartments_id) ON DELETE CASCADE,
+    date_start     DATE  NOT NULL,
+    date_end       DATE  NOT NULL,
+    price          FLOAT NOT NULL,
     CHECK (date_start < date_end)
 );
+
 
 -- Service Providers
 CREATE TABLE servicesProviders
@@ -188,8 +189,8 @@ CREATE TABLE commentaryImages
 CREATE TABLE providerAvailabilities
 (
     providerAvailabilities_id serial PRIMARY KEY,
-    status_id                 int REFERENCES availability_status(id) NOT NULL,
-    date                      date    NOT NULL,
+    status_id                 int REFERENCES availability_status (id) NOT NULL,
+    date                      date                                    NOT NULL,
     provider_id               int REFERENCES servicesProviders (servicesProviders_id) ON DELETE CASCADE
 );
 
@@ -197,8 +198,8 @@ CREATE TABLE providerAvailabilities
 CREATE TABLE apartmentAvailabilities
 (
     apartmentAvailabilities_id serial PRIMARY KEY,
-    status_id                  int REFERENCES availability_status(id) NOT NULL,
-    date                       date    NOT NULL,
+    status_id                  int REFERENCES availability_status (id) NOT NULL,
+    date                       date                                    NOT NULL,
     apartment_id               int REFERENCES apartments (apartments_id) ON DELETE CASCADE
 );
 
@@ -208,7 +209,7 @@ CREATE TABLE invoices
     invoice_id     serial PRIMARY KEY,
     user_id        int REFERENCES users (users_id) ON DELETE CASCADE,
     provider_id    int REFERENCES servicesProviders (servicesProviders_id) ON DELETE CASCADE,
-    reservation_id int REFERENCES reservations (reservations_id) ON DELETE CASCADE,
+    reservation_id int REFERENCES reservations (reservation_id) ON DELETE CASCADE,
     amount         numeric(10, 2),
     issued_date    date    DEFAULT CURRENT_DATE,
     paid           boolean DEFAULT false
@@ -249,4 +250,16 @@ CREATE TABLE inventory_pictures
     inventory_id INT  NOT NULL REFERENCES inventory (inventory_id),
     path         TEXT NOT NULL,
     created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Table pour les services liés aux réservations
+CREATE TABLE reservation_services
+(
+    reservation_service_id SERIAL PRIMARY KEY,
+    reservation_id         INT NOT NULL,
+    serviceType_id         INT NOT NULL,
+    serviceProvider_id     INT NOT NULL,
+    FOREIGN KEY (reservation_id) REFERENCES reservations (reservation_id),
+    FOREIGN KEY (serviceType_id) REFERENCES serviceTypes (servicetypes_id),
+    FOREIGN KEY (serviceProvider_id) REFERENCES servicesProviders (servicesProviders_id)
 );

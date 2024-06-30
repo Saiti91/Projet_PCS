@@ -70,6 +70,7 @@ VALUES
     ('Security'),
     ('Transport');
 
+
 -- Insertions for the servicesProviders table
 INSERT INTO servicesProviders (name, telephone, address_id, maxOperatingRadius, employee_count)
 VALUES
@@ -103,3 +104,16 @@ VALUES
     (3, 'free', '2024-01-01', '2024-12-31'),
     (4, 'bagPacker', '2024-01-01', '2024-12-31'),
     (5, 'explorator', '2024-01-01', '2024-12-31');
+
+-- Données de test pour reservation_services
+INSERT INTO reservation_services (reservation_id, serviceType_id, serviceProvider_id)
+VALUES
+    (1, 1, 1), -- Cleaning by CleanCo
+    (1, 2, 2), -- Maintenance by FixIt
+    (2, 1, 1), -- Cleaning by CleanCo
+    (2, 3, 3), -- Catering by Foodies
+    (3, 4, 4), -- Security by SecureGuard
+    (4, 2, 2), -- Maintenance by FixIt
+    (4, 5, 5), -- Transport by TransPro
+    (5, 3, 3), -- Catering by Foodies
+    (5, 4, 4); -- Security by SecureGuard

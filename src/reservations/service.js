@@ -5,32 +5,44 @@ const locationService = require("../apartments/service");
 const {InvalidArgumentError} = require("../common/service_errors");
 
 async function createOne(reservation) {
-    // Validation de la réservation avec le schéma approprié
-    const {value, error} = createReservationSchema.validate(reservation);
+    const { value, error } = createReservationSchema.validate(reservation);
     if (error) {
-        throw error;
+        throw new InvalidArgumentError(error.details[0].message);
     }
 
-    // Vérifie que l'emplacement existe
-    const location = await locationService.getOne(reservation.location);
+    const location = await locationService.getOne(value.apartment_id);
     if (!location) {
         throw new InvalidArgumentError("The location you're looking to reserve does not exist.");
     }
 
-    // Vérifie la disponibilité des dates
-    const isAvailable = await Repository.checkAvailability(value.date_start, value.date_end, value.location);
+    const isAvailable = await Repository.checkAvailability(value.date_start, value.date_end, value.apartment_id);
     if (!isAvailable) {
         throw new InvalidArgumentError("Some or all of the dates are not available. Please choose different dates.");
     }
 
-    // Vérifie s'il y a des réservations qui se chevauchent
-    const overlapping = await Repository.getOverlappingReservations(value.date_start, value.date_end, value.location);
+    const overlapping = await Repository.getOverlappingReservations(value.date_start, value.date_end, value.apartment_id);
     if (overlapping.length) {
         throw new InvalidArgumentError("This interval is not available due to existing reservations. Please try another interval.");
     }
 
-    // Crée la réservation
-    return await Repository.createOne(value);
+    const services = value.services.map(service => ({
+        serviceType_id: service.serviceType_id,
+        serviceProvider_id: service.serviceProvider_id
+    }));
+
+    // Enlever le tableau de services de l'objet de réservation
+    const reservationWithoutServices = {
+        customer: value.customer,
+        apartment_id: value.apartment_id,
+        date_start: value.date_start,
+        date_end: value.date_end,
+        price: value.price
+    };
+
+    console.log("Valeur Reservations sans services", reservationWithoutServices);
+    console.log("Valeur Services", services);
+
+    return await Repository.createOne(reservationWithoutServices, services);
 }
 
 // Fonction asynchrone pour récupérer une réservation par son identifiant
