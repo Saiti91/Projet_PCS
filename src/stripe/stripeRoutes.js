@@ -10,12 +10,16 @@ router.post('/charge', async (req, res) => {
             return res.status(400).send({ error: 'PaymentMethodId est requis' });
         }
 
+        // Récupérer l'hôte et le port dynamiquement
+        const host = req.headers.host;
+        const returnUrl = "http://"+host+"/payment-success";
+
         const paymentIntent = await stripe.paymentIntents.create({
             amount: 2000,
             currency: 'eur',
             payment_method: paymentMethodId,
             confirm: true,
-            return_url: 'http://localhost:5173/payment-success'
+            return_url: returnUrl
         });
 
         res.send({ success: true, paymentIntent });

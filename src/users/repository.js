@@ -81,11 +81,13 @@ async function getOne(id) {
 
 // Récupère un ou plusieurs utilisateurs en fonction d'un attribut
 async function getOneBy(attribute, value) {
-    return await db.oneOrNone(
+    const res = await db.oneOrNone(
         `SELECT *
          FROM users
          WHERE ${attribute} = $1`, [value]
     );
+    console.log(res);
+    return res || null;
 }
 
 // Récupère tous les utilisateurs
