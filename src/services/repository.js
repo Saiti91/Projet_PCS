@@ -1,5 +1,6 @@
 const db = require("../common/db_handler");
 const {InvalidArgumentError} = require("../common/service_errors");
+const apartmentRepository = require("../apartments/repository");
 
 // Create an address
 async function createAddress(client, address) {
@@ -170,9 +171,44 @@ async function getAppartementById(id) {
     }
 }
 
+async function getAllServicesWithCoordinates() {
+    try {
+        const res = await db.manyOrNone(`
+            SELECT 
+                sp.servicesProviders_id,
+                sp.name AS provider_name,
+                sp.telephone,
+                sp.maxOperatingRadius,
+                sp.employee_count,
+                a.latitude,
+                a.longitude,
+                a.town AS city,
+                json_agg(
+                    json_build_object(
+                        'serviceType_id', st.serviceTypes_id,
+                        'serviceType_name', st.name,
+                        'price', spts.price
+                    )
+                ) AS services
+            FROM 
+                servicesProviders sp
+                LEFT JOIN address a ON sp.address_id = a.address_id
+                LEFT JOIN serviceProviderToServiceTypes spts ON sp.servicesProviders_id = spts.serviceProvider_id
+                LEFT JOIN serviceTypes st ON spts.serviceType_id = st.serviceTypes_id
+            GROUP BY 
+                sp.servicesProviders_id, a.latitude, a.longitude, a.town
+        `);
+        console.log('All service providers with coordinates fetched:', res);
+        return res || [];
+    } catch (err) {
+        console.error('Error fetching all service providers with coordinates:', err);
+        throw err;
+    }
+}
+
 async function getAll() {
     try {
-        return await db.manyOrNone(`
+        const  res = await db.manyOrNone(`
             SELECT sp.*,
                    a.town AS city,
                    json_agg(
@@ -188,6 +224,8 @@ async function getAll() {
                      LEFT JOIN serviceTypes st ON spts.serviceType_id = st.serviceTypes_id
             GROUP BY sp.servicesProviders_id, a.town
         `);
+        console.log('All service providers fetched:', res);
+        return res || [];
     } catch (err) {
         console.error('Error fetching all service providers:', err);
         throw err;
@@ -282,5 +320,5 @@ module.exports = {
     getOneBy,
     getAllType,
     createProviderWithServices,
-    getServiceTypeIdByName
+    getAllServicesWithCoordinates
 };

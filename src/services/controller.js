@@ -1,6 +1,5 @@
 const {Router} = require("express");
 const Service = require("./service");
-const Repository = require("./repository");
 const {NotFoundError, InternalServerError} = require("../common/http_errors");
 const authorize = require("../common/middlewares/authorize_middleware");
 
@@ -46,22 +45,25 @@ controller.get(
 
 controller.get(
     "/appartements/:appartementId/services",
-    authorize(["staff", "customer", "owner", "provider"]),
+    authorize(["staff", "customer", "owner", "provider", "admin"]), // Middleware d'autorisation
     async (req, res, next) => {
         try {
+            // Récupérer l'ID de l'appartement depuis les paramètres de la requête
             const appartementId = Number(req.params.appartementId);
-            const appartement = await Service.getAppartementById(appartementId);
-            if (!appartement) {
-                return next(new NotFoundError(`Could not find apartment with id ${appartementId}`));
-            }
 
-            const maxDistance = Number(process.env.PROVIDER_RANGE_KM || 10);
-            const {latitude, longitude} = appartement;
-
-            const services = await Service.getServicesWithinRadius(latitude, longitude, maxDistance);
+            // Appeler la fonction de service pour obtenir les services disponibles
+            const services = await Service.getServicesWithinRadius(appartementId,process.env.PROVIDER_RANGE_KM);
+            console.log("Service avant envoi:",services)
+            // Envoyer la réponse en JSON avec les services obtenus
             res.json(services);
         } catch (err) {
+            // Gérer les erreurs et envoyer une réponse appropriée
             console.error("Failed to retrieve services:", err);
+
+            // Vérifier le type d'erreur et envoyer la réponse appropriée
+            if (err instanceof NotFoundError) {
+                return next(err);
+            }
             next(new InternalServerError("An error occurred while retrieving services"));
         }
     }

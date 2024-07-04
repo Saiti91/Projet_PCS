@@ -140,19 +140,19 @@ async function getOne(id) {
                    addr.town,
                    a.capacity,
                    a.apartmentsType_id,
-                   at.name AS apartment_type,
+                   at.name                     AS apartment_type,
                    a.numberOfRoom,
                    a.price,
                    ARRAY_AGG(DISTINCT ai.path) AS images,
                    ARRAY_AGG(DISTINCT af.name) AS features,
-                   u.email AS owner_email
+                   u.email                     AS owner_email
             FROM apartments a
-            JOIN address addr ON a.address_id = addr.address_id
-            JOIN users u ON a.owner_id = u.users_id
-            LEFT JOIN apartmentsImage ai ON a.apartments_id = ai.apartment_id
-            LEFT JOIN apartmentToFeatures atf ON a.apartments_id = atf.apartment_id
-            LEFT JOIN apartmentFeatures af ON atf.feature_id = af.feature_id
-            LEFT JOIN apartmentsTypes at ON a.apartmentsType_id = at.apartmentsTypes_id
+                     JOIN address addr ON a.address_id = addr.address_id
+                     JOIN users u ON a.owner_id = u.users_id
+                     LEFT JOIN apartmentsImage ai ON a.apartments_id = ai.apartment_id
+                     LEFT JOIN apartmentToFeatures atf ON a.apartments_id = atf.apartment_id
+                     LEFT JOIN apartmentFeatures af ON atf.feature_id = af.feature_id
+                     LEFT JOIN apartmentsTypes at ON a.apartmentsType_id = at.apartmentsTypes_id
             WHERE a.apartments_id = $1
             GROUP BY a.apartments_id, addr.street, addr.building, addr.apartmentNumber, addr.number,
                      addr.addressComplement, addr.CP, addr.town, at.name, u.email;
@@ -163,8 +163,7 @@ async function getOne(id) {
             throw new Error(`No apartment found with ID ${id}`);
         }
 
-        const apartCalendar = await calendar.getById(id);
-        apartment.calendar = apartCalendar;
+        apartment.calendar = await calendar.getById(id);
 
         return apartment;
     } catch (error) {
@@ -173,6 +172,26 @@ async function getOne(id) {
     }
 }
 
+async function getLongAndLat(apartmentId) {
+    try {
+        const res = await db.oneOrNone(`
+            SELECT addr.latitude, addr.longitude
+            FROM apartments a
+                     LEFT JOIN address addr ON a.address_id = addr.address_id
+            WHERE a.apartments_id = $1
+        `, [apartmentId]);
+        if (!res) {
+            throw new Error(`Apartment with id ${apartmentId} not found`);
+        }
+        return {
+            latitude: res.latitude,
+            longitude: res.longitude
+        };
+    } catch (err) {
+        console.error(`Error fetching coordinates for apartment with id ${apartmentId}:`, err);
+        throw err;
+    }
+}
 
 async function getAll() {
     try {
@@ -352,5 +371,6 @@ module.exports = {
     createCalendarForApartment,
     saveImagePaths,
     getApartmentFeatures,
-    getApartmentTypes
+    getApartmentTypes,
+    getLongAndLat
 };

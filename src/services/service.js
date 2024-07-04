@@ -5,7 +5,8 @@ const {
     addServiceToProviderSchema
 } = require("./model");
 const Repository = require("./repository");
-const {calculateDistance} = require("../common/middlewares/distanceCalculation_middleware");
+const apartmentsRepository = require("../apartments/repository");
+const distCalc = require("../common/middlewares/distanceCalculation_middleware");
 const {InvalidArgumentError, UnauthorizedError} = require("../common/service_errors");
 const {getGeoCoordinates} = require("../common/middlewares/gps_middleware");
 
@@ -103,28 +104,31 @@ async function getOne(id, issuer) {
     } else return service;
 }
 
-async function getServicesWithinRadius(lat, lon, maxDistance) {
+async function getServicesWithinRadius(apartment_id, maxDistance) {
     try {
-        const services = await Repository.getAll();
-        const filteredServices = services.filter(service => {
-            const distance = calculateDistance(lat, lon, service.latitude, service.longitude);
+        // Récupérer les coordonnées de l'appartement
+        const { latitude, longitude } = await apartmentsRepository.getLongAndLat(apartment_id);
+        console.log(`Apartment coordinates: latitude=${latitude}, longitude=${longitude}`);
+
+        // Récupérer la liste des services avec leurs données et leurs coordonnées
+        const services = await Repository.getAllServicesWithCoordinates();
+        console.log('All service providers with coordinates fetched:', services);
+
+        // Filtrer les services en fonction de la distance
+        const servicesWithinRadius = services.filter(service => {
+            const distance = distCalc.calculateDistance(latitude, longitude, service.latitude, service.longitude);
+            console.log(`Distance to service ${service.provider_name}: ${distance} km`);
             return distance <= maxDistance;
         });
-
-        const sortedServices = {};
-        filteredServices.forEach(service => {
-            const type = service.type;
-            if (!sortedServices[type] || service.id < sortedServices[type].id) {
-                sortedServices[type] = service;
-            }
-        });
-
-        return Object.values(sortedServices);
+        console.log("Distance Choisie: ",maxDistance)
+        console.log('Services within radius:', servicesWithinRadius);
+        return servicesWithinRadius;
     } catch (error) {
-        console.error("Error processing services within radius:", error);
-        throw new Error("Failed to process services within radius");
+        console.error(`Error fetching services within radius for apartment_id ${apartment_id}:`, error);
+        throw new Error("Failed to fetch services within radius");
     }
 }
+
 
 async function getAll() {
     const services = await Repository.getAll();
@@ -136,10 +140,6 @@ async function getAllType() {
     return services.map((service) => ({...service}));
 }
 
-async function getAppartementById(id) {
-    const appartement = await Repository.getAppartementById(id);
-    return {...appartement};
-}
 
 async function updateOne(id, service, issuer) {
     if (["customer", "owner", "provider"].includes(issuer.role) && issuer.id !== id) {
@@ -175,8 +175,7 @@ module.exports = {
     getOne,
     getAll,
     getServicesWithinRadius,
-    getAppartementById,
     updateOne,
     deleteOne,
-    getAllType,
+    getAllType
 };
