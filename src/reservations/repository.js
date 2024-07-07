@@ -11,7 +11,6 @@ async function createOne(reservation, services) {
 
     try {
         await client.query('BEGIN');
-        console.log("values", valuesString);
         const newReservation = await client.one(
             `INSERT INTO reservations(${attributesString})
              VALUES (${valuesString})
@@ -19,7 +18,6 @@ async function createOne(reservation, services) {
             values
         );
 
-        // Insérer les services liés à la réservation
         for (const service of services) {
             const { serviceType_id, serviceProvider_id } = service;
             await client.none(
@@ -44,7 +42,7 @@ async function createOne(reservation, services) {
 
 // Fonction asynchrone pour récupérer une réservation par son identifiant
 async function getOne(id) {
-    return await db.oneOrNone("SELECT * FROM reservations WHERE reservations_id=$1", [id]);
+    return await db.oneOrNone("SELECT * FROM reservations WHERE reservation_id=$1", [id]);
 }
 
 // Fonction asynchrone pour récupérer toutes les réservations
@@ -61,7 +59,7 @@ async function updateOne(id, reservation) {
     const modified = await db.oneOrNone(
         `UPDATE reservations
          SET ${attrsStr}
-         WHERE reservations_id = $1
+         WHERE reservation_id = $1
          RETURNING *;`,
         values
     );
@@ -72,7 +70,7 @@ async function updateOne(id, reservation) {
 // Fonction asynchrone pour supprimer une réservation par son identifiant
 async function deleteOne(id) {
     return await db.oneOrNone(
-        "DELETE FROM reservations WHERE reservations_id=$1 RETURNING reservations_id;",
+        "DELETE FROM reservations WHERE reservation_id=$1 RETURNING reservation_id;",
         [id]
     );
 }

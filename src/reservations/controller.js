@@ -1,5 +1,5 @@
 const {Router} = require("express");
-const reservationService = require("./service");
+const Service = require("./service");
 const {NotFoundError} = require("../common/http_errors");
 const authorize = require("../common/middlewares/authorize_middleware");
 
@@ -9,7 +9,7 @@ controller.get(
     "/",
     authorize(["staff", "customer", "owner", "provider"]),
     (_req, res, next) => {
-        reservationService.getAll()
+        Service.getAll()
             .then((data) => res.json(data))
             .catch((err) => next(err));
     },
@@ -19,7 +19,7 @@ controller.get(
     "/:id",
     authorize(["staff", "customer", "owner", "provider"]),
     (req, res, next) => {
-        reservationService.getOne(Number(req.params.id))
+        Service.getOne(Number(req.params.id))
             .then((data) => {
                 if (!data) {
                     throw new NotFoundError(`Could not find reservation with id ${req.params.id}`);
@@ -39,17 +39,18 @@ controller.post("/", authorize(["customer", "owner"]), (req, res, next) => {
         price: req.body.totalPrice,
         apartment_id: req.body.apartment_id,
     };
-
-    reservationService.createOne(reservationData)
+    console.log("Reservation data received:", reservationData);
+    Service.createOne(reservationData)
         .then((data) => res.status(201).json(data))
         .catch((err) => next(err));
 });
+
 
 controller.delete(
     "/:id",
     authorize(["staff", "owner", "customer", "provider"]),
     (req, res, next) => {
-        reservationService.deleteOne(Number(req.params.id))
+        Service.deleteOne(Number(req.params.id))
             .then((id) => {
                 if (!id) {
                     throw new NotFoundError(`Could not find reservation with id ${req.params.id}`);
@@ -64,7 +65,7 @@ controller.patch(
     "/:id",
     authorize(["staff", "owner", "customer", "provider"]),
     (req, res, next) => {
-        reservationService.updateOne(Number(req.params.id), {
+        Service.updateOne(Number(req.params.id), {
             ...req.body,
             date_start: new Date(req.body.date_start),
             date_end: new Date(req.body.date_end),

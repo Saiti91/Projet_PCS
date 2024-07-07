@@ -116,4 +116,4 @@ async function deleteOne(id) {
     return await db.oneOrNone("DELETE FROM users WHERE users_id=${id} RETURNING users_id;", {id});
 }
 
-module.exports = {createOne, getOne, getAll, updateOne, deleteOne, getOneBy};
+module.exports = {createOne, getOne, getAll, updateOne, deleteOne, getOneBy,createProvider};

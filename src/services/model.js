@@ -11,6 +11,7 @@ const createServicesSchema = Joi.object({
         town: Joi.string().required(),
     }).required(),
     phone: Joi.string().required(),
+    email: Joi.string().email().required(),
     services: Joi.array().items(Joi.object({
         id: Joi.number().required(),
         name: Joi.string().required(),

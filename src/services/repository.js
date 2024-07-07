@@ -1,8 +1,7 @@
 const db = require("../common/db_handler");
 const {InvalidArgumentError} = require("../common/service_errors");
-const apartmentRepository = require("../apartments/repository");
 
-// Create an address
+
 async function createAddress(client, address) {
     try {
         const result = await client.one(
@@ -11,7 +10,6 @@ async function createAddress(client, address) {
              RETURNING address_id`,
             [address.number, address.street, address.CP, address.town, address.latitude, address.longitude]
         );
-        console.log('Address created with ID:', result.address_id);
         return result.address_id;
     } catch (err) {
         console.error('Error creating address:', err);
@@ -28,7 +26,7 @@ async function createServiceProvider(client, service) {
              RETURNING servicesProviders_id`,
             [service.name, service.telephone, service.address_id, service.maxOperatingRadius, service.employee_count]
         );
-        console.log('Service provider created with ID:', result.servicesproviders_id);
+        //TODO: Add service provider to user table
         return result.servicesproviders_id;
     } catch (err) {
         console.error('Error creating service provider:', err);
@@ -38,9 +36,7 @@ async function createServiceProvider(client, service) {
 
 async function getServiceProviderById(providerId) {
     try {
-        console.log('Fetching service provider by ID:', providerId);
         const result = await db.oneOrNone('SELECT * FROM servicesProviders WHERE servicesProviders_id = $1', [providerId]);
-        console.log('Service provider fetched:', result);
         return result;
     } catch (err) {
         console.error('Error fetching service provider:', err);
@@ -48,16 +44,15 @@ async function getServiceProviderById(providerId) {
     }
 }
 
-async function addServiceToProvider(providerId) {
+async function addServiceToProvider(providerId, value) {
     try {
-        console.log('Adding service to provider in database:', {providerId});
         const result = await db.one(
             `INSERT INTO serviceProviderToServiceTypes (serviceProvider_id, serviceType_id, price)
              VALUES ($1, $2, $3)
              RETURNING serviceProvider_id, serviceType_id`,
-            [providerId.provider_id, providerId.serviceType_id, providerId.price]
+            [value.provider_id, value.serviceType_id, value.price]
         );
-        console.log('Service added to provider in database:', result);
+
         return result;
     } catch (err) {
         console.error('Database error in adding service to provider:', err);
@@ -124,15 +119,11 @@ async function getOne(id) {
         const query = `
             SELECT sp.*,
                    a.*,
-                   (
-                       SELECT json_agg(row_to_json(s))
-                       FROM (
-                                SELECT st.name, sptst.price
-                                FROM serviceProviderToServiceTypes sptst
-                                         JOIN serviceTypes st ON sptst.serviceType_id = st.serviceTypes_id
-                                WHERE sptst.serviceProvider_id = sp.servicesProviders_id
-                            ) s
-                   ) AS services
+                   (SELECT json_agg(row_to_json(s))
+                    FROM (SELECT st.name, sptst.price
+                          FROM serviceProviderToServiceTypes sptst
+                                   JOIN serviceTypes st ON sptst.serviceType_id = st.serviceTypes_id
+                          WHERE sptst.serviceProvider_id = sp.servicesProviders_id) s) AS services
             FROM servicesProviders sp
                      LEFT JOIN address a ON sp.address_id = a.address_id
             WHERE sp.servicesProviders_id = $1
@@ -174,29 +165,26 @@ async function getAppartementById(id) {
 async function getAllServicesWithCoordinates() {
     try {
         const res = await db.manyOrNone(`
-            SELECT 
-                sp.servicesProviders_id,
-                sp.name AS provider_name,
-                sp.telephone,
-                sp.maxOperatingRadius,
-                sp.employee_count,
-                a.latitude,
-                a.longitude,
-                a.town AS city,
-                json_agg(
-                    json_build_object(
-                        'serviceType_id', st.serviceTypes_id,
-                        'serviceType_name', st.name,
-                        'price', spts.price
-                    )
-                ) AS services
-            FROM 
-                servicesProviders sp
-                LEFT JOIN address a ON sp.address_id = a.address_id
-                LEFT JOIN serviceProviderToServiceTypes spts ON sp.servicesProviders_id = spts.serviceProvider_id
-                LEFT JOIN serviceTypes st ON spts.serviceType_id = st.serviceTypes_id
-            GROUP BY 
-                sp.servicesProviders_id, a.latitude, a.longitude, a.town
+            SELECT sp.servicesProviders_id,
+                   sp.name AS provider_name,
+                   sp.telephone,
+                   sp.maxOperatingRadius,
+                   sp.employee_count,
+                   a.latitude,
+                   a.longitude,
+                   a.town  AS city,
+                   json_agg(
+                           json_build_object(
+                                   'serviceType_id', st.serviceTypes_id,
+                                   'serviceType_name', st.name,
+                                   'price', spts.price
+                           )
+                   )       AS services
+            FROM servicesProviders sp
+                     LEFT JOIN address a ON sp.address_id = a.address_id
+                     LEFT JOIN serviceProviderToServiceTypes spts ON sp.servicesProviders_id = spts.serviceProvider_id
+                     LEFT JOIN serviceTypes st ON spts.serviceType_id = st.serviceTypes_id
+            GROUP BY sp.servicesProviders_id, a.latitude, a.longitude, a.town
         `);
         console.log('All service providers with coordinates fetched:', res);
         return res || [];
@@ -208,7 +196,7 @@ async function getAllServicesWithCoordinates() {
 
 async function getAll() {
     try {
-        const  res = await db.manyOrNone(`
+        const res = await db.manyOrNone(`
             SELECT sp.*,
                    a.town AS city,
                    json_agg(

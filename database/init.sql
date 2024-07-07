@@ -48,8 +48,8 @@ CREATE TABLE users
     role       role          NOT NULL,
     email      citext UNIQUE NOT NULL,
     password   citext        NOT NULL,
-    first_name citext        NOT NULL,
-    last_name  citext        NOT NULL,
+    first_name citext        ,
+    last_name  citext        ,
     telephone  VARCHAR(15) CHECK (telephone ~ '^\+?\d{1,15}$'),
     address_id int           REFERENCES address (address_id) ON DELETE SET NULL,
     serviceProvider_id INT REFERENCES servicesProviders (servicesProviders_id) ON DELETE SET NULL

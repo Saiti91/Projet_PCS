@@ -21,6 +21,7 @@ async function createAvailabilities(apartmentId) {
         throw error;
     }
 }
+
 async function getByApartmentId(apartmentId) {
     if (!apartmentId) {
         throw new Error("Apartment ID is required.");
@@ -99,4 +100,3 @@ module.exports = {
     updateAvailabilities,
     deleteAvailabilitiesByApartmentId
 };
-
