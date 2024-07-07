@@ -24,8 +24,6 @@ async function createProvider(provider) {
             role: 'provider',
             email: provider.email,
             password: provider.password,
-            first_name: provider.name.split(" ")[0], // Option pour séparer le prénom et le nom
-            last_name: provider.name.split(" ").slice(1).join(" "),
             telephone: provider.telephone || null
         };
 
