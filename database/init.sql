@@ -29,6 +29,17 @@ CREATE TABLE address
     town              citext
 );
 
+-- Service Providers
+CREATE TABLE servicesProviders
+(
+    servicesProviders_id serial PRIMARY KEY,
+    name                 text,
+    telephone            VARCHAR(15) CHECK (telephone ~ '^\+?\d{1,15}$'),
+    address_id           int REFERENCES address (address_id) ON DELETE CASCADE,
+    maxOperatingRadius   float8,
+    employee_count       int
+);
+
 -- Users
 CREATE TABLE users
 (
@@ -40,7 +51,8 @@ CREATE TABLE users
     first_name citext        NOT NULL,
     last_name  citext        NOT NULL,
     telephone  VARCHAR(15) CHECK (telephone ~ '^\+?\d{1,15}$'),
-    address_id int           REFERENCES address (address_id) ON DELETE SET NULL
+    address_id int           REFERENCES address (address_id) ON DELETE SET NULL,
+    serviceProvider_id INT REFERENCES servicesProviders (servicesProviders_id) ON DELETE SET NULL
 );
 
 -- Abonnements
@@ -128,16 +140,7 @@ CREATE TABLE reservations
 );
 
 
--- Service Providers
-CREATE TABLE servicesProviders
-(
-    servicesProviders_id serial PRIMARY KEY,
-    name                 text,
-    telephone            VARCHAR(15) CHECK (telephone ~ '^\+?\d{1,15}$'),
-    address_id           int REFERENCES address (address_id) ON DELETE CASCADE,
-    maxOperatingRadius   float8,
-    employee_count       int
-);
+
 
 -- Service Provider to Service Types
 CREATE TABLE serviceProviderToServiceTypes

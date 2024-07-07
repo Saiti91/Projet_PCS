@@ -14,8 +14,8 @@ Write-Host "Démarrage du conteneur Docker pour PostgreSQL..."
 docker run --name PCS_postgres -e POSTGRES_PASSWORD=password -d --restart unless-stopped -v ${PWD}/database:/docker-entrypoint-initdb.d -p 5432:5432 postgres:latest
 
 # Attendre que le conteneur soit complètement démarré
-Write-Host "Attente de 10 secondes pour que le conteneur démarre..."
-Start-Sleep -Seconds 10
+Write-Host "Attente de 5 secondes pour que le conteneur démarre..."
+Start-Sleep -Seconds 5
 
 # Exécuter le script SQL
 Write-Host "Exécution du script SQL pour initialiser la base de données..."
