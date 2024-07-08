@@ -7,6 +7,7 @@ const {
 const Repository = require("./repository");
 const UserRepository = require("../users/repository");
 const apartmentsRepository = require("../apartments/repository");
+const availableServicesRepository = require("../serviceCalendar/repository");
 const distCalc = require("../common/middlewares/distanceCalculation_middleware");
 const { InvalidArgumentError, UnauthorizedError } = require("../common/service_errors");
 const { getGeoCoordinates } = require("../common/middlewares/gps_middleware");
@@ -26,10 +27,18 @@ async function createOne(serviceData) {
         console.log('Service name already taken:', value.name);
         throw new InvalidArgumentError('This service name is already taken.');
     }
+
+    let user;
     const existingUser = await UserRepository.getOneBy('email', value.email);
-    if (existingUser) {
-        console.log('Email already used', value.name);
-        throw new InvalidArgumentError('This service email is already taken.');
+    if (!existingUser) {
+        const userProvider = {
+            role: 'provider',
+            email: value.email,
+            password: 'password',
+            telephone: value.phone
+        };
+        user = await UserRepository.createProvider(userProvider);
+        console.log('User created:', user);
     }
 
     const coordinates = await getGeoCoordinates(value.address);
@@ -41,24 +50,8 @@ async function createOne(serviceData) {
     value.address.longitude = coordinates.longitude;
 
     const providerId = await Repository.createProviderWithServices(value, value.services);
-
-    const userProvider = {
-        role: 'provider',
-        email: value.email,
-        password: 'password',
-        telephone: value.phone
-    };
-    const user = await UserRepository.createProvider(userProvider);
     console.log('Service provider created with ID:', providerId);
-
-    if (value.imagePaths) {
-        const imageUploadPromises = value.imagePaths.map(path =>
-            Repository.uploadServiceImage(providerId, { path, serviceTypeId: null })
-        );
-        await Promise.all(imageUploadPromises);
-        console.log('Service images uploaded:', value.imagePaths);
-    }
-
+    await availableServicesRepository.createAvailabilities(providerId);
     return { message: 'Service created successfully', id: providerId, user: user };
 }
 

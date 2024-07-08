@@ -1,6 +1,7 @@
 // Importation des schémas
 const {createReservationSchema, updateReservationSchema} = require("./model");
 const Repository = require("./repository");
+const CalendarRepository = require("../serviceCalendar/repository");
 const locationService = require("../apartments/service");
 const {InvalidArgumentError} = require("../common/service_errors");
 
@@ -27,10 +28,11 @@ async function createOne(reservation) {
 
     const services = value.services.map(service => ({
         serviceType_id: service.serviceType_id,
-        serviceProvider_id: service.serviceProvider_id
+        serviceProvider_id: service.serviceProvider_id,
+        date_start: value.date_start,
+        date_end: value.date_end
     }));
 
-    // Enlever le tableau de services de l'objet de réservation
     const reservationWithoutServices = {
         customer: value.customer,
         apartment_id: value.apartment_id,
@@ -42,9 +44,24 @@ async function createOne(reservation) {
     console.log("Valeur Reservations sans services", reservationWithoutServices);
     console.log("Valeur Services", services);
 
-    return await Repository.createOne(reservationWithoutServices, services);
-}
+    const newReservation = await Repository.createOne(reservationWithoutServices, services);
 
+    // Mettre à jour les disponibilités des fournisseurs de services
+    for (const service of services) {
+        const availabilities = [];
+        let currentDate = new Date(service.date_start);
+        const endDate = new Date(service.date_end);
+
+        while (currentDate <= endDate) {
+            availabilities.push({ date: currentDate.toISOString().split('T')[0] });
+            currentDate.setDate(currentDate.getDate() + 1);
+        }
+
+        await CalendarRepository.updateAvailabilities(service.serviceProvider_id, availabilities);
+    }
+
+    return newReservation;
+}
 // Fonction asynchrone pour récupérer une réservation par son identifiant
 async function getOne(id) {
     return await Repository.getOne(id);

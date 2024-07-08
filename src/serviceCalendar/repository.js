@@ -3,15 +3,15 @@ const generateDates = require('../common/middlewares/generateDate');
 
 // Créer des disponibilités pour un fournisseur de services
 async function createAvailabilities(providerId) {
-    const dates = generateDates(720); // Générer 720 dates à partir d'aujourd'hui
+    const dates = generateDates(360); // Générer 720 dates à partir d'aujourd'hui
 
     try {
         await db.tx(async t => {
             const insertAvailabilityQueries = dates.map(date => {
                 return t.none(
-                    `INSERT INTO providerAvailabilities (date, available, provider_id)
+                    `INSERT INTO providerAvailabilities (date, status_id, provider_id)
                      VALUES ($1, $2, $3)`,
-                    [date, true, providerId]
+                    [date, 1, providerId]
                 );
             });
             await t.batch(insertAvailabilityQueries);
@@ -57,13 +57,13 @@ async function getAllAvailabilities() {
 async function updateAvailabilities(providerId, availabilities) {
     try {
         await db.tx(async t => {
-            const updateQueries = availabilities.map(({date, available}) => {
+            const updateQueries = availabilities.map(({date}) => {
                 return t.none(
                     `UPDATE providerAvailabilities
-                     SET available = $1
+                     SET status_id = $1
                      WHERE provider_id = $2
                        AND date = $3`,
-                    [available, providerId, date]
+                    [3, providerId, date]
                 );
             });
             await t.batch(updateQueries);

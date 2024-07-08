@@ -1,6 +1,6 @@
 const db = require("../common/db_handler");
-const {InvalidArgumentError} = require("../common/service_errors");
-
+const { InvalidArgumentError } = require("../common/service_errors");
+const availableServices = require("../serviceCalendar/repository");
 
 async function createAddress(client, address) {
     try {
@@ -17,7 +17,6 @@ async function createAddress(client, address) {
     }
 }
 
-// Create a service provider
 async function createServiceProvider(client, service) {
     try {
         const result = await client.one(
@@ -26,7 +25,6 @@ async function createServiceProvider(client, service) {
              RETURNING servicesProviders_id`,
             [service.name, service.telephone, service.address_id, service.maxOperatingRadius, service.employee_count]
         );
-        //TODO: Add service provider to user table
         return result.servicesproviders_id;
     } catch (err) {
         console.error('Error creating service provider:', err);
@@ -44,22 +42,18 @@ async function getServiceProviderById(providerId) {
     }
 }
 
-async function addServiceToProvider(providerId, value) {
+async function addServiceToProvider(client, providerId, value) {
     try {
-        const result = await db.one(
+        await client.none(
             `INSERT INTO serviceProviderToServiceTypes (serviceProvider_id, serviceType_id, price)
-             VALUES ($1, $2, $3)
-             RETURNING serviceProvider_id, serviceType_id`,
-            [value.provider_id, value.serviceType_id, value.price]
+             VALUES ($1, $2, $3)`,
+            [providerId, value.serviceType_id, value.price]
         );
-
-        return result;
     } catch (err) {
         console.error('Database error in adding service to provider:', err);
         throw err;
     }
 }
-
 
 async function uploadServiceImage(client, serviceProviderId, image) {
     try {
@@ -134,7 +128,6 @@ async function getOne(id) {
         throw err;
     }
 }
-
 
 async function getOneBy(attribute, value) {
     try {
@@ -231,8 +224,14 @@ async function getAllType() {
 
 async function updateOne(id, service) {
     try {
-        const attrsStr = pgp.helpers.update(service, null, "servicesProviders") + ` WHERE servicesProviders_id = $1 RETURNING *;`;
-        return await db.oneOrNone(attrsStr, [id]);
+        const query = `
+            UPDATE servicesProviders
+            SET ${Object.keys(service).map((key, i) => `${key} = $${i + 2}`).join(', ')}
+            WHERE servicesProviders_id = $1
+            RETURNING *;
+        `;
+        const values = [id, ...Object.values(service)];
+        return await db.oneOrNone(query, values);
     } catch (err) {
         console.error('Error updating service provider:', err);
         throw err;
@@ -248,7 +247,6 @@ async function deleteOne(id) {
     }
 }
 
-// Get service type ID by name
 async function getServiceTypeIdByName(name) {
     try {
         const result = await db.one(
@@ -264,35 +262,44 @@ async function getServiceTypeIdByName(name) {
     }
 }
 
-// Create a service provider with services in a transaction
-async function createProviderWithServices(providerValue, services) {
-    const client = await db.connect();
+async function resetPrimaryKeySequence(tableName, primaryKeyColumn) {
+    const sequenceName = `${tableName}_${primaryKeyColumn}_seq`;
+    const query = `
+        SELECT setval('${sequenceName}', COALESCE((SELECT MAX(${primaryKeyColumn}) FROM ${tableName}) + 1, 1), false);
+    `;
     try {
-        await client.query('BEGIN');
-
-        providerValue.address_id = await createAddress(client, providerValue.address);
-
-        const createdProviderId = await createServiceProvider(client, providerValue);
-
-        for (const service of services) {
-            console.log('Adding service:', service.name, 'to provider:', createdProviderId)
-            const serviceTypeId = await getServiceTypeIdByName(service.name);
-            if (!serviceTypeId) {
-                throw new InvalidArgumentError(`Service type ${service.name} not found`);
-            }
-            await addServiceToProvider(client, createdProviderId, {
-                serviceType_id: serviceTypeId,
-                price: service.price
-            });
-        }
-
-        await client.query('COMMIT');
-        return createdProviderId;
-    } catch (err) {
-        await client.query('ROLLBACK');
-        console.error('Error in transaction, rollback:', err);
-        throw err;
+        await db.none(query);
+        console.log(`Sequence ${sequenceName} has been reset.`);
+    } catch (error) {
+        console.error(`Failed to reset sequence ${sequenceName}:`, error);
     }
+}
+
+async function createProviderWithServices(providerValue, services) {
+    return db.tx(async t => {
+        try {
+            providerValue.address_id = await createAddress(t, providerValue.address);
+            const createdProviderId = await createServiceProvider(t, providerValue);
+
+            for (const service of services) {
+                console.log('Adding service:', service.name, 'to provider:', createdProviderId);
+                const serviceTypeId = await getServiceTypeIdByName(service.name);
+                if (!serviceTypeId) {
+                    throw new InvalidArgumentError(`Service type ${service.name} not found`);
+                }
+                await addServiceToProvider(t, createdProviderId, {
+                    serviceType_id: serviceTypeId,
+                    price: service.price
+                });
+            }
+            return createdProviderId;
+        } catch (err) {
+            console.error('Error in transaction, rollback:', err);
+            await resetPrimaryKeySequence('servicesProviders', 'servicesProviders_id');
+            await resetPrimaryKeySequence('address', 'address_id');
+            throw err;
+        }
+    });
 }
 
 module.exports = {
@@ -308,5 +315,6 @@ module.exports = {
     getOneBy,
     getAllType,
     createProviderWithServices,
-    getAllServicesWithCoordinates
+    getAllServicesWithCoordinates,
+    createProvider: createServiceProvider
 };
