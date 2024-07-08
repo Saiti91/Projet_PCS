@@ -32,6 +32,21 @@ async function createServiceProvider(client, service) {
     }
 }
 
+async function createRequestedServiceProvider(client, service) {
+    try {
+        const result = await client.one(
+            `INSERT INTO servicesProviders (name, telephone, address_id, maxOperatingRadius, employee_count)
+             VALUES ($1, $2, $3, $4, $5)
+             RETURNING servicesProviders_id`,
+            [service.name, service.telephone, service.address_id, service.maxOperatingRadius, service.employee_count]
+        );
+        return result.servicesproviders_id;
+    } catch (err) {
+        console.error('Error creating service provider:', err);
+        throw err;
+    }
+}
+
 async function getServiceProviderById(providerId) {
     try {
         const result = await db.oneOrNone('SELECT * FROM servicesProviders WHERE servicesProviders_id = $1', [providerId]);
@@ -46,6 +61,19 @@ async function addServiceToProvider(client, providerId, value) {
     try {
         await client.none(
             `INSERT INTO serviceProviderToServiceTypes (serviceProvider_id, serviceType_id, price)
+             VALUES ($1, $2, $3)`,
+            [providerId, value.serviceType_id, value.price]
+        );
+    } catch (err) {
+        console.error('Database error in adding service to provider:', err);
+        throw err;
+    }
+}
+
+async function addServiceToRequestProvider(client, providerId, value) {
+    try {
+        await client.none(
+            `INSERT INTO providerrequesttoservicetypes (request_id, serviceType_id, price)
              VALUES ($1, $2, $3)`,
             [providerId, value.serviceType_id, value.price]
         );
@@ -187,6 +215,88 @@ async function getAllServicesWithCoordinates() {
     }
 }
 
+async function getAllRequested() {
+    try {
+        const requestedProviders = await db.manyOrNone(`
+            SELECT rsp.requestedServicesProviders_id,
+                   rsp.name,
+                   rsp.telephone,
+                   rsp.maxOperatingRadius,
+                   rsp.employee_count,
+                   a.latitude,
+                   a.longitude,
+                   a.town AS city,
+                   json_agg(
+                           json_build_object(
+                                   'serviceType_id', st.serviceTypes_id,
+                                   'serviceType_name', st.name,
+                                   'price', prtst.price
+                           )
+                   ) AS services
+            FROM requestedServicesProviders rsp
+                     LEFT JOIN address a ON rsp.address_id = a.address_id
+                     LEFT JOIN providerRequestToServiceTypes prtst ON rsp.requestedServicesProviders_id = prtst.request_id
+                     LEFT JOIN serviceTypes st ON prtst.serviceType_id = st.serviceTypes_id
+            GROUP BY rsp.requestedServicesProviders_id, a.latitude, a.longitude, a.town
+            LIMIT 100;
+        `);
+
+        return requestedProviders || [];
+    } catch (error) {
+        console.error("Failed to retrieve requested service providers:", error);
+        throw error;
+    }
+}
+
+async function getOneRequested(id) {
+    if (!id) {
+        throw new Error("Requested Service Provider ID is required.");
+    }
+
+    try {
+        const requestedProviderQuery = `
+            SELECT rsp.requestedServicesProviders_id,
+                   rsp.name,
+                   rsp.telephone,
+                   rsp.maxOperatingRadius,
+                   rsp.employee_count,
+                   a.latitude,
+                   a.longitude,
+                   a.street,
+                   a.building,
+                   a.apartmentNumber,
+                   a.number,
+                   a.addressComplement,
+                   a.CP,
+                   a.town,
+                   json_agg(
+                           json_build_object(
+                                   'serviceType_id', st.serviceTypes_id,
+                                   'serviceType_name', st.name,
+                                   'price', prtst.price
+                           )
+                   ) AS services
+            FROM requestedServicesProviders rsp
+                     LEFT JOIN address a ON rsp.address_id = a.address_id
+                     LEFT JOIN providerRequestToServiceTypes prtst ON rsp.requestedServicesProviders_id = prtst.request_id
+                     LEFT JOIN serviceTypes st ON prtst.serviceType_id = st.serviceTypes_id
+            WHERE rsp.requestedServicesProviders_id = $1
+            GROUP BY rsp.requestedServicesProviders_id, a.latitude, a.longitude, a.street, a.building,
+                     a.apartmentNumber, a.number, a.addressComplement, a.CP, a.town;
+        `;
+
+        const requestedProvider = await db.oneOrNone(requestedProviderQuery, [id]);
+        if (!requestedProvider) {
+            throw new Error(`No requested service provider found with ID ${id}`);
+        }
+
+        return requestedProvider;
+    } catch (error) {
+        console.error(`Failed to retrieve requested service provider with ID ${id}:`, error);
+        throw error;
+    }
+}
+
 async function getAll() {
     try {
         const res = await db.manyOrNone(`
@@ -247,6 +357,27 @@ async function deleteOne(id) {
     }
 }
 
+async function deleteRequestOne(id) {
+    return db.tx(async t => {
+        try {
+            // Delete associated service types for the provider request
+            await t.none("DELETE FROM providerrequesttoservicetypes WHERE request_id = $1", [id]);
+
+            // Delete the provider request itself
+            const result = await t.oneOrNone("DELETE FROM requestedservicesproviders WHERE requestedservicesproviders_id = $1 RETURNING requestedservicesproviders_id;", [id]);
+
+            if (!result) {
+                throw new InvalidArgumentError(`Provider request with id ${id} not found`);
+            }
+
+            console.log(`Provider request with ID ${id} has been deleted.`);
+            return result.request_id;
+        } catch (err) {
+            console.error('Error deleting provider request:', err);
+            throw err;
+        }
+    });
+}
 async function getServiceTypeIdByName(name) {
     try {
         const result = await db.one(
@@ -302,6 +433,32 @@ async function createProviderWithServices(providerValue, services) {
     });
 }
 
+async function createRequestProviderWithServices(providerValue, services) {
+    return db.tx(async t => {
+        try {
+            providerValue.address_id = await createAddress(t, providerValue.address);
+            const createdProviderId = await createRequestedServiceProvider(t, providerValue);
+
+            for (const service of services) {
+                console.log('Adding service:', service.name, 'to provider:', createdProviderId);
+                const serviceTypeId = await getServiceTypeIdByName(service.name);
+                if (!serviceTypeId) {
+                    throw new InvalidArgumentError(`Service type ${service.name} not found`);
+                }
+                await addServiceToRequestProvider(t, createdProviderId, {
+                    serviceType_id: serviceTypeId,
+                    price: service.price
+                });
+            }
+            return createdProviderId;
+        } catch (err) {
+            console.error('Error in transaction, rollback:', err);
+            await resetPrimaryKeySequence('servicesProviders', 'servicesProviders_id');
+            await resetPrimaryKeySequence('address', 'address_id');
+            throw err;
+        }
+    });
+}
 module.exports = {
     uploadServiceImage,
     getServiceProviderById,
@@ -316,5 +473,9 @@ module.exports = {
     getAllType,
     createProviderWithServices,
     getAllServicesWithCoordinates,
-    createProvider: createServiceProvider
+    createProvider: createServiceProvider,
+    createRequestProviderWithServices,
+    deleteRequestOne,
+    getOneRequested,
+    getAllRequested
 };

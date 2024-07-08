@@ -54,6 +54,58 @@ async function createOne(apartment) {
     }
 }
 
+async function requestCreateOne(apartment) {
+    const {address} = apartment;
+
+    if (!apartment.ownerEmail) {
+        throw new Error("Owner email is required.");
+    }
+
+    if (!address || !address.street || !address.town) {
+        throw new Error("Address information is incomplete.");
+    }
+
+    const owner = await db.oneOrNone("SELECT users_id FROM users WHERE email=$1", [apartment.ownerEmail]);
+    if (!owner) {
+        throw new Error("No user found with the provided email.");
+    }
+    apartment.owner_id = owner.users_id;
+
+    delete apartment.imagePaths;
+    delete apartment.address;
+    delete apartment.ownerEmail;
+
+    try {
+        return await db.tx(async t => {
+            const newAddress = await t.one(
+                `INSERT INTO address (longitude, latitude, number, addressComplement, building, apartmentNumber, street,
+                                      CP, town)
+                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                 RETURNING address_id`,
+                [address.longitude, address.latitude, address.number, address.addressComplement, address.building, address.apartmentNumber, address.street, address.CP, address.town]
+            );
+            apartment.address_id = newAddress.address_id;
+
+            const attributesString = Object.keys(apartment).join(",");
+            const valuesString = Object.keys(apartment).map((_, i) => `$${i + 1}`).join(",");
+            const apartmentValues = Object.values(apartment);
+            return await t.one(
+                `INSERT INTO requestedApartments(${attributesString})
+                 VALUES (${valuesString})
+                 RETURNING requestedApartments_id;`,
+                apartmentValues
+            );
+        });
+    } catch (error) {
+        console.error("Failed to create apartment:", error);
+
+        await resetPrimaryKeySequence('address', 'address_id');
+        await resetPrimaryKeySequence('apartments', 'apartments_id');
+
+        throw new Error("Failed to create apartment.");
+    }
+}
+
 async function saveImagePaths(apartmentId, imagePaths, t) {
     try {
         const insertImageQueries = imagePaths.map(path => {
@@ -241,6 +293,100 @@ async function getAll() {
     }
 }
 
+async function getAllRequested() {
+    try {
+        const requestedApartments = await db.manyOrNone(`
+            SELECT ra.requestedApartments_id,
+                   ra.created_at,
+                   ra.surface,
+                   addr.street,
+                   addr.building,
+                   addr.apartmentNumber,
+                   addr.number,
+                   addr.addressComplement,
+                   addr.CP,
+                   addr.town,
+                   ra.capacity,
+                   ra.apartmentsType_id,
+                   ra.name,
+                   at.name                     AS apartment_type,
+                   ra.numberOfRoom,
+                   ra.price,
+                   ARRAY_AGG(DISTINCT ai.path) AS images,
+                   ARRAY_AGG(DISTINCT af.name) AS features,
+                   u.email                     AS owner_email
+            FROM requestedApartments ra
+                     JOIN address addr ON ra.address_id = addr.address_id
+                     JOIN users u ON ra.owner_id = u.users_id
+                     LEFT JOIN apartmentsImage ai ON ra.requestedApartments_id = ai.apartment_id
+                     LEFT JOIN apartmentToFeatures atf ON ra.requestedApartments_id = atf.apartment_id
+                     LEFT JOIN apartmentFeatures af ON atf.feature_id = af.feature_id
+                     LEFT JOIN apartmentsTypes at ON ra.apartmentsType_id = at.apartmentsTypes_id
+            GROUP BY ra.requestedApartments_id, addr.street, addr.building, addr.apartmentNumber, addr.number,
+                     addr.addressComplement, addr.CP, addr.town, at.name, u.email
+            LIMIT 100;
+        `);
+
+        return requestedApartments || [];
+    } catch (error) {
+        console.error("Failed to retrieve requested apartments:", error);
+        throw error;
+    }
+}
+
+async function getOneRequested(id) {
+    if (!id) {
+        throw new Error("Requested Apartment ID is required.");
+    }
+
+    try {
+        const requestedApartmentQuery = `
+            SELECT ra.requestedApartments_id,
+                   ra.name,
+                   ra.created_at,
+                   ra.surface,
+                   addr.street,
+                   addr.building,
+                   addr.apartmentNumber,
+                   addr.number,
+                   addr.addressComplement,
+                   addr.CP,
+                   addr.town,
+                   ra.capacity,
+                   ra.apartmentsType_id,
+                   at.name                     AS apartment_type,
+                   ra.numberOfRoom,
+                   ra.price,
+                   ARRAY_AGG(DISTINCT ai.path) AS images,
+                   ARRAY_AGG(DISTINCT af.name) AS features,
+                   u.email                     AS owner_email
+            FROM requestedApartments ra
+                     JOIN address addr ON ra.address_id = addr.address_id
+                     JOIN users u ON ra.owner_id = u.users_id
+                     LEFT JOIN apartmentsImage ai ON ra.requestedApartments_id = ai.apartment_id
+                     LEFT JOIN apartmentToFeatures atf ON ra.requestedApartments_id = atf.apartment_id
+                     LEFT JOIN apartmentFeatures af ON atf.feature_id = af.feature_id
+                     LEFT JOIN apartmentsTypes at ON ra.apartmentsType_id = at.apartmentsTypes_id
+            WHERE ra.requestedApartments_id = $1
+            GROUP BY ra.requestedApartments_id, addr.street, addr.building, addr.apartmentNumber, addr.number,
+                     addr.addressComplement, addr.CP, addr.town, at.name, u.email;
+        `;
+
+        const requestedApartment = await db.oneOrNone(requestedApartmentQuery, [id]);
+        if (!requestedApartment) {
+            throw new Error(`No requested apartment found with ID ${id}`);
+        }
+
+        requestedApartment.calendar = await calendar.getById(id);
+
+        return requestedApartment;
+    } catch (error) {
+        console.error(`Failed to retrieve requested apartment with ID ${id}:`, error);
+        throw error;
+    }
+}
+
+
 async function getCarousel() {
     try {
         const res = await db.manyOrNone(`
@@ -359,6 +505,23 @@ async function deleteOne(id) {
     }
 }
 
+
+async function deleteRequestedOne(id) {
+    if (!id) {
+        throw new Error("Apartment ID is required.");
+    }
+
+    try {
+        return await db.oneOrNone(
+            "DELETE FROM requestedApartments WHERE requestedApartments_id = $1 RETURNING requestedApartments_id;",
+            [id]
+        );
+    } catch (error) {
+        console.error(`Failed to delete apartment with ID ${id}:`, error);
+        throw error;
+    }
+}
+
 module.exports = {
     createOne,
     getOne,
@@ -372,5 +535,9 @@ module.exports = {
     saveImagePaths,
     getApartmentFeatures,
     getApartmentTypes,
-    getLongAndLat
+    getLongAndLat,
+    requestCreateOne,
+    deleteRequestedOne,
+    getAllRequested,
+    getOneRequested
 };

@@ -40,6 +40,17 @@ CREATE TABLE servicesProviders
     employee_count       int
 );
 
+-- Requested Service Providers
+CREATE TABLE requestedServicesProviders
+(
+    requestedServicesProviders_id serial PRIMARY KEY,
+    name                 text,
+    telephone            VARCHAR(15) CHECK (telephone ~ '^\+?\d{1,15}$'),
+    address_id           int REFERENCES address (address_id) ON DELETE CASCADE,
+    maxOperatingRadius   float8,
+    employee_count       int
+);
+
 -- Users
 CREATE TABLE users
 (
@@ -87,6 +98,21 @@ CREATE TABLE apartmentsTypes
 CREATE TABLE apartments
 (
     apartments_id     serial PRIMARY KEY,
+    created_at        timestamp DEFAULT NOW(),
+    owner_id          int REFERENCES users (users_id) ON DELETE CASCADE,
+    surface           int,
+    address_id        int REFERENCES address (address_id),
+    capacity          int,
+    apartmentsType_id int REFERENCES apartmentsTypes (apartmentsTypes_id) ON DELETE CASCADE,
+    numberOfRoom      int,
+    price             float8,
+    name              citext
+);
+
+-- Requested Apartments
+CREATE TABLE requestedApartments
+(
+    requestedApartments_id     serial PRIMARY KEY,
     created_at        timestamp DEFAULT NOW(),
     owner_id          int REFERENCES users (users_id) ON DELETE CASCADE,
     surface           int,
@@ -149,6 +175,15 @@ CREATE TABLE serviceProviderToServiceTypes
     serviceType_id     int REFERENCES serviceTypes (serviceTypes_id) ON DELETE CASCADE,
     price              float,
     PRIMARY KEY (serviceProvider_id, serviceType_id)
+);
+
+-- Requested Service Provider to Service Types
+CREATE TABLE providerRequestToServiceTypes
+(
+    request_id int REFERENCES requestedServicesProviders (requestedServicesProviders_id) ON DELETE CASCADE,
+    serviceType_id int REFERENCES serviceTypes (serviceTypes_id) ON DELETE CASCADE,
+    price float,
+    PRIMARY KEY (request_id, serviceType_id)
 );
 
 -- Apartment Images

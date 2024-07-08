@@ -104,6 +104,98 @@ async function createOne(location, files) {
     }
 }
 
+
+async function requestCreateOne(location, files) {
+    const addressKeys = ['longitude', 'latitude', 'building', 'apartmentNumber', 'addressComplement'];
+    addressKeys.forEach(key => {
+        if (location.address[key] === '') {
+            location.address[key] = null;
+        }
+    });
+
+    if (!location || !location.address) {
+        throw new Error("Location or address is not defined.");
+    }
+
+    const {error} = createApartmentSchema.validate(location, {allowUnknown: true});
+    if (error) {
+        throw new InvalidArgumentError("Invalid location data!");
+    }
+
+    const owner = await UserRepository.getOneBy("email", location.ownerEmail);
+    if (!owner) {
+        throw new InvalidArgumentError("Provided owner does not have an account!");
+    }
+
+    const apartmentType = await Repository.getApartmentTypeIdByName(location.apartmentsType);
+    if (!apartmentType) {
+        throw new InvalidArgumentError("Invalid apartment type!");
+    }
+    location.apartmentsType_id = apartmentType;
+    delete location.apartmentsType;
+
+    try {
+        const coordinates = await getGeoCoordinates(location.address);
+        location.address.latitude = coordinates.latitude;
+        location.address.longitude = coordinates.longitude;
+    } catch (error) {
+        throw new InvalidArgumentError("Failed to obtain geo-coordinates. Please ensure the address is complete and correct.");
+    }
+
+    let apartmentId;
+    let apartmentDir;
+    try {
+        await db.tx(async t => {
+            const apartment = await Repository.requestCreateOne(location, t);
+            apartmentId = apartment.apartments_id;
+
+            apartmentDir = path.join(__dirname, `../assets/housing/${apartmentId}`);
+            if (!fs.existsSync(apartmentDir)) {
+                fs.mkdirSync(apartmentDir, {recursive: true});
+            }
+
+            const imagePaths = [];
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                const oldPath = file.path;
+                const newPath = path.join(apartmentDir, `${i + 1}${path.extname(file.originalname)}`);
+                if (fs.existsSync(oldPath)) {
+                    fs.renameSync(oldPath, newPath);
+                    imagePaths.push(newPath);
+                } else {
+                    throw new InvalidArgumentError(`File not found: ${oldPath}`);
+                }
+            }
+
+            await Repository.saveImagePaths(apartmentId, imagePaths, t);
+
+            for (const file of files) {
+                if (fs.existsSync(file.path)) {
+                    fs.unlinkSync(file.path);
+                }
+            }
+        });
+    } catch (error) {
+        console.error("Error creating location:", error);
+
+        for (const file of files) {
+            if (fs.existsSync(file.path)) {
+                fs.unlinkSync(file.path);
+            }
+        }
+
+        if (apartmentId) {
+            await Repository.deleteResquestedOne(apartmentId);
+            if (apartmentDir && fs.existsSync(apartmentDir)) {
+                fs.rmSync(apartmentDir, {recursive: true});
+            }
+        }
+
+        throw new InvalidArgumentError("Failed to create location.");
+    }
+}
+
+
 // Fonction asynchrone pour récupérer un emplacement par son identifiant
 async function getOne(id) {
     try {
@@ -136,6 +228,26 @@ async function getApartmentFeatures() {
 async function getAll() {
     try {
         return await Repository.getAll();
+    } catch (error) {
+        console.error("Failed to retrieve locations:", error);
+        throw new Error("Failed to retrieve locations.");
+    }
+}
+
+// Fonction asynchrone pour récupérer un emplacement par son identifiant
+async function getOneRequest(id) {
+    try {
+        return await Repository.getOneRequested(id);
+    } catch (error) {
+        console.error(`Failed to retrieve location with ID ${id}:`, error);
+        throw new Error(`Failed to retrieve location with ID ${id}.`);
+    }
+}
+
+// Fonction asynchrone pour récupérer tous les emplacements
+async function getAllRequest() {
+    try {
+        return await Repository.getAllRequested();
     } catch (error) {
         console.error("Failed to retrieve locations:", error);
         throw new Error("Failed to retrieve locations.");
@@ -190,6 +302,16 @@ async function deleteOne(id) {
     }
 }
 
+// Fonction asynchrone pour supprimer un emplacement par son identifiant
+async function deleteRequestedOne(id) {
+    try {
+        return await Repository.deleteRequestedOne(id);
+    } catch (error) {
+        console.error(`Failed to delete location with ID ${id}:`, error);
+        throw new Error(`Failed to delete location with ID ${id}.`);
+    }
+}
+
 module.exports = {
     createOne,
     getOne,
@@ -199,5 +321,9 @@ module.exports = {
     getCarousel,
     getApartmentImageById,
     getApartmentFeatures,
-    getApartmentsTypes
+    getApartmentsTypes,
+    requestCreateOne,
+    deleteRequestedOne,
+    getOneRequest,
+    getAllRequest
 };

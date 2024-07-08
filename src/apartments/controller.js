@@ -16,6 +16,15 @@ controller.get("/", async (req, res, next) => {
     }
 });
 
+controller.get("/request", async (req, res, next) => {
+    try {
+        const data = await apartmentsServices.getAllRequest();
+        res.json(data);
+    } catch (err) {
+        next(err);
+    }
+});
+
 controller.get("/apartmentsTypes", async (req, res, next) => {
     try {
         const data = await apartmentsServices.getApartmentsTypes();
@@ -64,6 +73,18 @@ controller.get("/:id", async (req, res, next) => {
     }
 });
 
+controller.get("/request/:id", async (req, res, next) => {
+    try {
+        const data = await apartmentsServices.getOneRequest(Number(req.params.id));
+        if (data === null) {
+            throw new NotFoundError(`Could not find location with id ${req.params.id}`);
+        }
+        res.json(data);
+    } catch (err) {
+        next(err);
+    }
+});
+
 // Updated endpoint to handle file uploads
 controller.post("/", authorize(["staff", "admin"]), upload.array('images', 5), async (req, res, next) => {
     try {
@@ -73,10 +94,31 @@ controller.post("/", authorize(["staff", "admin"]), upload.array('images', 5), a
         next(err);
     }
 });
+// Updated endpoint to handle file uploads
+controller.post("/request", authorize(["staff", "admin"]), upload.array('images', 5), async (req, res, next) => {
+    try {
+        const data = await apartmentsServices.requestCreateOne(req.body, req.files);
+        res.status(201).json(data);
+    } catch (err) {
+        next(err);
+    }
+});
 
 controller.delete("/:id", authorize(["staff", "owner", "admin"]), async (req, res, next) => {
     try {
         const id = await apartmentsServices.deleteOne(Number(req.params.id));
+        if (id === null) {
+            throw new NotFoundError(`Could not find location with id ${req.params.id}`);
+        }
+        res.status(204).json();
+    } catch (err) {
+        next(err);
+    }
+});
+
+controller.delete("/:id", authorize(["staff", "owner", "admin"]), async (req, res, next) => {
+    try {
+        const id = await apartmentsServices.deleteRequestedOne(Number(req.params.id));
         if (id === null) {
             throw new NotFoundError(`Could not find location with id ${req.params.id}`);
         }

@@ -44,6 +44,34 @@ controller.get(
 );
 
 controller.get(
+    "/request",
+    authorize(["staff", "admin"]),
+    (_req, res, next) => {
+        Service.getAllRequested()
+            .then((data) => res.json(data))
+            .catch((err) => next(err));
+    },
+);
+
+controller.get(
+    "/request/:id",
+    authorize(["staff", "admin"]),
+    (req, res, next) => {
+        Service.getOneRequested(Number(req.params.id), {
+            id: req.auth?.uid,
+            role: req.auth?.urole,
+        })
+            .then((data) => {
+                if (data === null) {
+                    throw new NotFoundError(`Could not find service with id ${req.params.id}`);
+                }
+                res.json(data);
+            })
+            .catch((err) => next(err));
+    },
+);
+
+controller.get(
     "/appartements/:appartementId/services",
     authorize(["staff", "customer", "owner", "provider", "admin"]), // Middleware d'autorisation
     async (req, res, next) => {
@@ -74,6 +102,18 @@ controller.post(
     authorize(["staff", "admin"]),
     (req, res, next) => {
         Service.createOne(req.body)
+            .then((data) => {
+                res.status(201).json(data);
+            })
+            .catch((err) => next(err));
+    },
+);
+
+controller.post(
+    "/request",
+    authorize(["customer"]),
+    (req, res, next) => {
+        Service.createRequestOne(req.body)
             .then((data) => {
                 res.status(201).json(data);
             })
@@ -139,6 +179,23 @@ controller.delete(
     },
 );
 
+controller.delete(
+    "/request/:id",
+    authorize(["admin", "staff"]),
+    (req, res, next) => {
+        Service.deleteRequestOne(Number(req.params.id), {
+            id: req.auth?.uid,
+            role: req.auth?.urole,
+        })
+            .then((id) => {
+                if (id === null) {
+                    throw new NotFoundError(`Could not find service with id ${req.params.id}`);
+                }
+                res.status(204).send();
+            })
+            .catch((err) => next(err));
+    },
+);
 controller.patch(
     "/:id",
     authorize(["owner", "customer", "staff", "provider"]),

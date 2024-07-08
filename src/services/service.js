@@ -55,6 +55,48 @@ async function createOne(serviceData) {
     return { message: 'Service created successfully', id: providerId, user: user };
 }
 
+async function createRequestOne(serviceData) {
+    console.log('Service data received:', serviceData);
+
+    const { value, error } = createServicesSchema.validate(serviceData);
+    if (error) {
+        console.log('Validation error:', error.details);
+        throw error;
+    }
+    console.log('Validated data:', value);
+
+    const existingService = await Repository.getOneBy('name', value.name);
+    if (existingService) {
+        console.log('Service name already taken:', value.name);
+        throw new InvalidArgumentError('This service name is already taken.');
+    }
+
+    let user;
+    const existingUser = await UserRepository.getOneBy('email', value.email);
+    if (!existingUser) {
+        const userProvider = {
+            role: 'provider',
+            email: value.email,
+            password: 'password',
+            telephone: value.phone
+        };
+        user = await UserRepository.createProvider(userProvider);
+        console.log('User created:', user);
+    }
+
+    const coordinates = await getGeoCoordinates(value.address);
+    if (!coordinates) {
+        console.log('Failed to geocode address:', value.address);
+        throw new Error('Failed to geocode address.');
+    }
+    value.address.latitude = coordinates.latitude;
+    value.address.longitude = coordinates.longitude;
+
+    const providerId = await Repository.createRequestProviderWithServices(value, value.services);
+    console.log('Service provider created with ID:', providerId);
+    return { message: 'Service created successfully', id: providerId, user: user };
+}
+
 async function createType(serviceData, features = []) {
     const { value, error } = createServicesTypeSchema.validate({ ...serviceData, features });
     if (error) {
@@ -138,6 +180,26 @@ async function getAllType() {
     return services.map(service => ({ ...service }));
 }
 
+
+async function getOneRequested(id, issuer) {
+    if (["provider"].includes(issuer.role) && issuer.id !== id) {
+        throw new UnauthorizedError("You can only see your own service.");
+    }
+
+    const service = await Repository.getOneRequested(id);
+    if (service) {
+        return { ...service };
+    } else {
+        return service;
+    }
+}
+
+async function getAllRequested() {
+    const services = await Repository.getAllRequested();
+    return services.map(service => ({ ...service }));
+}
+
+
 async function updateOne(id, service, issuer) {
     if (["customer", "owner", "provider"].includes(issuer.role) && issuer.id !== id) {
         throw new UnauthorizedError("You cannot update services.");
@@ -165,14 +227,26 @@ async function deleteOne(id, issuer) {
     return await Repository.deleteOne(id);
 }
 
+async function deleteRequestOne(id, issuer) {
+    if (["customer", "owner", "provider"].includes(issuer.role)) {
+        throw new UnauthorizedError("You cannot delete a service.");
+    }
+
+    return await Repository.deleteRequestOne(id);
+}
+
 module.exports = {
     createOne,
     createType,
+    deleteRequestOne,
     addServiceToProvider,
     getOne,
     getAll,
     getServicesWithinRadius,
     updateOne,
     deleteOne,
-    getAllType
+    getAllType,
+    createRequestOne,
+    getAllRequested,
+    getOneRequested
 };
