@@ -104,7 +104,6 @@ async function createOne(location, files) {
     }
 }
 
-
 async function requestCreateOne(location, files) {
     const addressKeys = ['longitude', 'latitude', 'building', 'apartmentNumber', 'addressComplement'];
     addressKeys.forEach(key => {
@@ -194,7 +193,6 @@ async function requestCreateOne(location, files) {
         throw new InvalidArgumentError("Failed to create location.");
     }
 }
-
 
 // Fonction asynchrone pour récupérer un emplacement par son identifiant
 async function getOne(id) {

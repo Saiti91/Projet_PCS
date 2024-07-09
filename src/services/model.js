@@ -23,6 +23,7 @@ const createServicesTypeSchema = Joi.object({
     name: Joi.string().required(),
     features: Joi.array().items(Joi.string()).required()
 });
+
 const addServiceToProviderSchema = Joi.object({
     provider_id: Joi.number().integer().required(),
     serviceType_id: Joi.number().integer().required(),

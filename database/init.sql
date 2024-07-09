@@ -157,7 +157,7 @@ CREATE TABLE serviceTypeToFeatures
 CREATE TABLE reservations
 (
     reservation_id SERIAL PRIMARY KEY,
-    customer       INT REFERENCES users (users_id) ON DELETE CASCADE,
+    users_id       INT REFERENCES users (users_id) ON DELETE CASCADE,
     apartment_id   INT REFERENCES apartments (apartments_id) ON DELETE CASCADE,
     date_start     DATE  NOT NULL,
     date_end       DATE  NOT NULL,

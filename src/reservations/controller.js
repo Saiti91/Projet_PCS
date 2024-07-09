@@ -30,6 +30,21 @@ controller.get(
     },
 );
 
+controller.get(
+    "/users/:id",
+    authorize(["staff", "customer", "owner", "provider","admin"]),
+    (req, res, next) => {
+        Service.getUserOne(Number(req.params.id))
+            .then((data) => {
+                if (!data) {
+                    throw new NotFoundError(`Could not find reservation with user id ${req.params.id}`);
+                }
+                res.json(data);
+            })
+            .catch((err) => next(err));
+    },
+);
+
 controller.post("/", authorize(["customer", "owner"]), (req, res, next) => {
     const reservationData = {
         customer: req.auth?.uid,

@@ -95,7 +95,7 @@ VALUES
     (5, 2), (5, 5);
 
 -- Insertions for the reservations table
-INSERT INTO reservations (apartment_id, customer, date_start, date_end, price)
+INSERT INTO reservations (apartment_id, users_id, date_start, date_end, price)
 VALUES
     (1, 3, '2024-07-01', '2024-07-10', 600),
     (2, 3, '2024-08-01', '2024-08-10', 800),

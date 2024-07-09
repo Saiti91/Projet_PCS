@@ -45,6 +45,11 @@ async function getOne(id) {
     return await db.oneOrNone("SELECT * FROM reservations WHERE reservation_id=$1", [id]);
 }
 
+// Fonction asynchrone pour récupérer une réservation par son identifiant
+async function getUserOne(id) {
+    return await db.oneOrNone("SELECT * FROM reservations WHERE users_id=$1", [id]);
+}
+
 // Fonction asynchrone pour récupérer toutes les réservations
 async function getAll() {
     const res = await db.manyOrNone("SELECT * FROM reservations");
@@ -56,15 +61,13 @@ async function updateOne(id, reservation) {
     const attrsStr = Object.keys(reservation).map((k, i) => `${k} = $${i + 2}`).join(",");
     const values = [id, ...Object.values(reservation)];
 
-    const modified = await db.oneOrNone(
+    return await db.oneOrNone(
         `UPDATE reservations
          SET ${attrsStr}
          WHERE reservation_id = $1
          RETURNING *;`,
         values
     );
-
-    return modified;
 }
 
 // Fonction asynchrone pour supprimer une réservation par son identifiant
@@ -123,4 +126,5 @@ module.exports = {
     updateOne,
     deleteOne,
     checkAvailability,
+    getUserOne
 };

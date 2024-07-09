@@ -94,6 +94,7 @@ controller.post("/", authorize(["staff", "admin"]), upload.array('images', 5), a
         next(err);
     }
 });
+
 // Updated endpoint to handle file uploads
 controller.post("/request", authorize(["staff", "admin"]), upload.array('images', 5), async (req, res, next) => {
     try {

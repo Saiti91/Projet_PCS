@@ -22,10 +22,6 @@ async function login(loginForm) {
     if (!user) {
         throw new AuthError("Could not login: unknown email provided");
     }
-
-    // Vérification du mot de passe - il est crucial d'implémenter cette vérification correctement
-    // Utilisez des fonctions de hashage sécurisées comme bcrypt pour comparer les mots de passe
-
     // Génération du jeton JWT pour l'utilisateur et retour du jeton
     return generateJWT(user.users_id, user.role);
 }
