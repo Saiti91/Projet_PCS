@@ -74,7 +74,9 @@ async function createOne(user) {
 
 // Récupère un utilisateur en fonction de son ID
 async function getOne(id) {
-    return await db.oneOrNone("SELECT * FROM users WHERE users_id=${id}", {id});
+    const res = await db.oneOrNone("SELECT * FROM users WHERE users_id=${id}", {id});
+    console.log("From repo:" , res)
+    return res;
 }
 
 // Récupère un ou plusieurs utilisateurs en fonction d'un attribut
@@ -85,7 +87,7 @@ async function getOneBy(attribute, value) {
          WHERE ${attribute} = $1`, [value]
     );
     console.log(res);
-    return res || null;
+    return res;
 }
 
 // Récupère tous les utilisateurs

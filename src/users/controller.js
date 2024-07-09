@@ -78,8 +78,9 @@ controller.delete(
 //Vérification du role et suppression en fonction de paramettre (un saff peut patch tout le monde, un user peut se patch lui-même, etc..)
 controller.patch(
     "/:id",
-    authorize(["owner", "customer", "staff", "provider"]),
+    authorize(["owner", "customer", "staff", "provider","admin"]),
     (req, res, next) => {
+        console.log(req.body)
         usersService.updateOne(Number(req.params.id), req.body, {
             id: req.auth?.uid,
             role: req.auth?.urole,
@@ -87,7 +88,8 @@ controller.patch(
             .then((data) => {
                 if (data === null) {
                     throw new NotFoundError(
-                        `Could not find user with id ${req.params.id}`
+                        `Could not find
+                         user with id ${req.params.id}`
                     );
                 }
                 res.status(200).json(data);

@@ -51,12 +51,12 @@ async function getAll() {
 
 // fonction de changement d'information sur un utilisateur en fonction de son ID
 async function updateOne(id, user, issuer) {
+    console.log('Service ')
+    console.log('ID: ',id)
+    console.log('User: ', user)
+    console.log('Issuer',issuer)
     if (["customer", "owner", "provider"].includes(issuer.role) && issuer.id !== id) {
         throw new UnauthorizedError("You can only update your own account.");
-    }
-
-    if (["customer", "owner", "provider"].includes(issuer.role) && user.role) {
-        throw new UnauthorizedError("You cannot change your role.");
     }
 
     if (issuer.role === "staff" && user.role === "admin") {
@@ -71,14 +71,14 @@ async function updateOne(id, user, issuer) {
     }
 
     const {value, error} = updateUserSchema.validate(user);
-    if (error) {
+        if (error) {
         throw error;
     }
 
     if (await Repository.getOneBy("email", value.email)) {
         throw new InvalidArgumentError("This email is already taken.");
     }
-
+    console.log('Service',id,value)
     const newUser = await Repository.updateOne(id, value);
 
     if (newUser) {

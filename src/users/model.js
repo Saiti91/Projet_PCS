@@ -42,17 +42,14 @@ const createProviderSchema = Joi.object({
 
 // Schéma de validation pour mettre à jour un utilisateur
 const updateUserSchema = Joi.object({
+    users_id: Joi.number().integer().required(),
     role: Joi.string().valid("admin", "customer", "owner", "staff", "provider").optional(),
     email: Joi.string().email().optional(),
     password: Joi.string().optional(),
     first_name: Joi.string().optional(),
     last_name: Joi.string().optional(),
     telephone: Joi.string().pattern(/^\+?\d{1,15}$/).optional(),
-    address: addressSchema.optional(),
-    type: Joi.number().optional(),
-    maxOperatingRadius: Joi.number().optional(),
-    price: Joi.number().optional(),
-    employee_count: Joi.number().optional()
+    address: addressSchema.optional()
 }).min(1);
 
 module.exports = {
