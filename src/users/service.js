@@ -24,7 +24,7 @@ async function createOne(user) {
     // Si l'utilisateur créé a le rôle "provider", effectuer des opérations supplémentaires
     if (newUser.role === 'provider') {
         // Par exemple, créer un calendrier pour le provider
-        await calendar.createProviderCalendar(newUser.id); // Assurez-vous que cette fonction existe et est implémentée correctement
+        //await calendar.createProviderCalendar(newUser.id);
     }
 
     // Renvoi de l'utilisateur nouvellement créé avec le mot de passe masqué
@@ -63,23 +63,25 @@ async function updateOne(id, user, issuer) {
         throw new UnauthorizedError("Only admins can create admins.");
     }
 
-    if (
-        issuer.role === "staff" &&
-        (await Repository.getOne(id))?.role === "admin"
-    ) {
+    if (issuer.role === "staff" && (await Repository.getOne(id))?.role === "admin") {
         throw new UnauthorizedError("Staff cannot downgrade admins.");
     }
-
+    delete user.address_id
     const {value, error} = updateUserSchema.validate(user);
         if (error) {
         throw error;
     }
 
-    if (await Repository.getOneBy("email", value.email)) {
+    // Check if the email is already taken by another user
+    console.log('Checking if email is already taken');
+    const existingUser = await Repository.getOneBy("email", value.email);
+    console.log('Existing user with the same email:', existingUser);
+    if (existingUser && existingUser.users_id !== id) {
         throw new InvalidArgumentError("This email is already taken.");
     }
+
     console.log('Service',id,value)
-    const newUser = await Repository.updateOne(id, value);
+    const newUser =  await Repository.updateOne(id, value);
 
     if (newUser) {
         return {...newUser, password: "[redacted]"};

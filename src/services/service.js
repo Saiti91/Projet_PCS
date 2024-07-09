@@ -32,12 +32,13 @@ async function createOne(serviceData) {
     const existingUser = await UserRepository.getOneBy('email', value.email);
     if (!existingUser) {
         const userProvider = {
+            name: value.name,
             role: 'provider',
             email: value.email,
             password: 'password',
             telephone: value.phone
         };
-        user = await UserRepository.createProvider(userProvider);
+        user = await UserRepository.createProvider(userProvider,value.address);
         console.log('User created:', user);
     }
 

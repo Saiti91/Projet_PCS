@@ -122,3 +122,23 @@ VALUES
     (4, 5, 6), -- Transport by TransPro
     (5, 3, 4), -- Catering by Foodies
     (5, 4, 5); -- Security by SecureGuard
+
+-- Ajout des disponibilités pour chaque fournisseur de services
+-- DO $$
+--     DECLARE
+--         provider RECORD;
+--         start_date DATE := CURRENT_DATE;
+--         end_date DATE := start_date + INTERVAL '360 days';
+--         current_date DATE;
+--     BEGIN
+--         FOR provider IN
+--             SELECT servicesproviders_id FROM servicesproviders
+--             LOOP
+--                         current_date := start_date;
+--                 WHILE current_date <= end_date LOOP
+--                         INSERT INTO providerAvailabilities (status_id, serviceType_id, date, provider_id)
+--                         VALUES (1, NULL, current_date, provider.servicesproviders_id);
+--                                 current_date := current_date + INTERVAL '1 day';
+--                     END WHILE;
+--             END LOOP;
+--     END $$;
