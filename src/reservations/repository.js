@@ -6,6 +6,7 @@ async function createOne(reservation, services) {
     const attributesString = Object.keys(reservation).join(",");
     const valuesString = Object.keys(reservation).map((_, i) => `$${i + 1}`).join(",");
     const values = Object.values(reservation);
+
     console.log("values", values);
     const client = await db.connect();
 
@@ -47,7 +48,7 @@ async function getOne(id) {
 
 // Fonction asynchrone pour récupérer une réservation par son identifiant
 async function getUserOne(id) {
-    return await db.oneOrNone("SELECT * FROM reservations WHERE users_id=$1", [id]);
+    return await db.manyOrNone("SELECT * FROM reservations WHERE users_id=$1", [id]);
 }
 
 // Fonction asynchrone pour récupérer toutes les réservations

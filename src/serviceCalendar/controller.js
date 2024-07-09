@@ -35,7 +35,7 @@ controller.post("/", authorize(["staff", "admin"]), (req, res, next) => {
 });
 
 // Route DELETE pour supprimer une disponibilité par ID
-controller.delete("/:id", authorize(["staff", "admin"]), (req, res, next) => {
+controller.delete("/:id", authorize(["staff", "admin","provider"]), (req, res, next) => {
     service.deleteOne(Number(req.params.id))
         .then((id) => {
             if (id === null) {

@@ -54,10 +54,10 @@ async function getAllAvailabilities() {
 }
 
 // Mettre à jour les disponibilités d'un fournisseur de services
-async function updateAvailabilities(providerId, serviceType_id, availabilities) {
+async function updateAvailabilities(providerId, availabilities) {
     try {
         await db.tx(async t => {
-            const updateQueries = availabilities.map(({date}) => {
+            const updateQueries = availabilities.map(({ date, serviceType_id }) => {
                 return t.none(
                     `UPDATE providerAvailabilities
                      SET status_id = $1, serviceType_id = $4
@@ -74,6 +74,7 @@ async function updateAvailabilities(providerId, serviceType_id, availabilities) 
         throw error;
     }
 }
+
 
 
 // Supprimer les disponibilités d'un fournisseur de services par ID

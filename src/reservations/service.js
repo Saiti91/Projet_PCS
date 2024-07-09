@@ -34,7 +34,7 @@ async function createOne(reservation) {
     }));
 
     const reservationWithoutServices = {
-        customer: value.customer,
+        users_id: value.customer,
         apartment_id: value.apartment_id,
         date_start: value.date_start,
         date_end: value.date_end,

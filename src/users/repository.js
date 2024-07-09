@@ -24,17 +24,11 @@ async function createUser(user) {
 // Création d'un fournisseur de services
 async function createProvider(provider, address) {
     return await db.tx(async t => {
-        console.log('Create provider in repo : ', provider);
-        console.log('Provider address : ', address);
-
-        const newUser = await t.oneOrNone(
-            'INSERT INTO users (role, email, password, telephone) values ($1, $2, $3, $4) RETURNING *;',
-            [provider.role, provider.email, provider.password, provider.telephone]
-        );
 
         // Créer l'adresse pour le fournisseur de services
         const newAddress = await createAddress(address, t);
-
+        console.log(newAddress)
+        console.log(newAddress.address_id)
         const serviceProvider = {
             name: provider.name,
             address_id: newAddress.address_id,
@@ -42,9 +36,9 @@ async function createProvider(provider, address) {
             employee_count: provider.employee_count || 1
         };
 
-        console.log('Provider data : ', serviceProvider);
         const newServiceProvider = await t.oneOrNone(
-            'INSERT INTO servicesproviders (name, telephone, address_id, maxoperatingradius, employee_count) values ($1, $2, $3, $4, $5) RETURNING *;',
+            'INSERT INTO servicesproviders (name, telephone, address_id, maxoperatingradius, employee_count) ' +
+            'values ($1, $2, $3, $4, $5) RETURNING *;',
             [
                 serviceProvider.name,
                 provider.telephone,
@@ -52,6 +46,11 @@ async function createProvider(provider, address) {
                 serviceProvider.maxOperatingRadius,
                 serviceProvider.employee_count
             ]
+        );
+        console.log(newServiceProvider)
+        const newUser = await t.oneOrNone(
+            'INSERT INTO users (role, email, password, telephone,serviceprovider_id) values ($1, $2, $3, $4,$5) RETURNING *;',
+            [provider.role, provider.email, provider.password, provider.telephone,newServiceProvider.servicesproviders_id]
         );
 
         // Insérer les types de services associés
