@@ -1,3 +1,4 @@
+const db = require("../common/db_handler");
 const {
     createServicesSchema,
     updateServicesSchema,
@@ -28,7 +29,7 @@ async function createOne(serviceData) {
         throw new InvalidArgumentError('This service name is already taken.');
     }
 
-    let user;
+    let providerId;
     const existingUser = await UserRepository.getOneBy('email', value.email);
     if (!existingUser) {
         const userProvider = {
@@ -38,8 +39,10 @@ async function createOne(serviceData) {
             password: 'password',
             telephone: value.phone
         };
-        user = await UserRepository.createProvider(userProvider,value.address);
-        console.log('User created:', user);
+        providerId = await UserRepository.createProvider(userProvider, value.address);
+        console.log('User created with provider ID:', providerId);
+    } else {
+        providerId = existingUser.provider_id;
     }
 
     const coordinates = await getGeoCoordinates(value.address);
@@ -50,52 +53,26 @@ async function createOne(serviceData) {
     value.address.latitude = coordinates.latitude;
     value.address.longitude = coordinates.longitude;
 
-    const providerId = await Repository.createProviderWithServices(value, value.services);
-    console.log('Service provider created with ID:', providerId);
-    await availableServicesRepository.createAvailabilities(providerId);
-    return { message: 'Service created successfully', id: providerId, user: user };
-}
+    try {
+        await db.tx(async t => {
+            value.address_id = await Repository.createAddress(t, value.address);
 
-async function createRequestOne(serviceData) {
-    console.log('Service data received:', serviceData);
+            for (const service of value.services) {
+                const serviceTypeId = await Repository.getServiceTypeIdByName(service.name);
+                if (!serviceTypeId) {
+                    throw new InvalidArgumentError(`Service type ${service.name} not found`);
+                }
+                console.log('Adding service:', service.name, 'to provider:', providerId.serviceprovider_id);
+                await Repository.addServiceToProvider(t, providerId.serviceprovider_id, { serviceType_id: serviceTypeId, price: service.price });
+            }
 
-    const { value, error } = createServicesSchema.validate(serviceData);
-    if (error) {
-        console.log('Validation error:', error.details);
-        throw error;
+            await availableServicesRepository.createAvailabilities(providerId.serviceprovider_id, t);
+        });
+        return { message: 'Service created successfully', id: providerId.serviceprovider_id };
+    } catch (error) {
+        console.error("Error creating location:", error);
+        throw new InvalidArgumentError("Failed to create location.");
     }
-    console.log('Validated data:', value);
-
-    const existingService = await Repository.getOneBy('name', value.name);
-    if (existingService) {
-        console.log('Service name already taken:', value.name);
-        throw new InvalidArgumentError('This service name is already taken.');
-    }
-
-    let user;
-    const existingUser = await UserRepository.getOneBy('email', value.email);
-    if (!existingUser) {
-        const userProvider = {
-            role: 'provider',
-            email: value.email,
-            password: 'password',
-            telephone: value.phone
-        };
-        user = await UserRepository.createProvider(userProvider);
-        console.log('User created:', user);
-    }
-
-    const coordinates = await getGeoCoordinates(value.address);
-    if (!coordinates) {
-        console.log('Failed to geocode address:', value.address);
-        throw new Error('Failed to geocode address.');
-    }
-    value.address.latitude = coordinates.latitude;
-    value.address.longitude = coordinates.longitude;
-
-    const providerId = await Repository.createRequestProviderWithServices(value, value.services);
-    console.log('Service provider created with ID:', providerId);
-    return { message: 'Service created successfully', id: providerId, user: user };
 }
 
 async function createType(serviceData, features = []) {
@@ -156,15 +133,14 @@ async function getOne(id, issuer) {
 
 async function getServicesWithinRadius(apartment_id, maxDistance) {
     try {
-        const { latitude, longitude } = await apartmentsRepository.getLongAndLat(apartment_id);
+        const { latitude, longitude } = await apartmentsRepository.getOneRequested(apartment_id);
 
         const services = await Repository.getAllServicesWithCoordinates();
 
-        const servicesWithinRadius = services.filter(service => {
+        return services.filter(service => {
             const distance = distCalc.calculateDistance(latitude, longitude, service.latitude, service.longitude);
             return distance <= maxDistance;
         });
-        return servicesWithinRadius;
     } catch (error) {
         console.error(`Error fetching services within radius for apartment_id ${apartment_id}:`, error);
         throw new Error("Failed to fetch services within radius");
@@ -181,25 +157,23 @@ async function getAllType() {
     return services.map(service => ({ ...service }));
 }
 
+async function getAllRequested() {
+    const services = await Repository.getAll();
+    return services.map(service => ({ ...service }));
+}
 
 async function getOneRequested(id, issuer) {
     if (["provider"].includes(issuer.role) && issuer.id !== id) {
         throw new UnauthorizedError("You can only see your own service.");
     }
 
-    const service = await Repository.getOneRequested(id);
+    const service = await Repository.getOne(id);
     if (service) {
         return { ...service };
     } else {
         return service;
     }
 }
-
-async function getAllRequested() {
-    const services = await Repository.getAllRequested();
-    return services.map(service => ({ ...service }));
-}
-
 
 async function updateOne(id, service, issuer) {
     if (["customer", "owner", "provider"].includes(issuer.role) && issuer.id !== id) {
@@ -233,7 +207,7 @@ async function deleteRequestOne(id, issuer) {
         throw new UnauthorizedError("You cannot delete a service.");
     }
 
-    return await Repository.deleteRequestOne(id);
+    return await Repository.deleteOne(id);
 }
 
 module.exports = {
@@ -247,7 +221,6 @@ module.exports = {
     updateOne,
     deleteOne,
     getAllType,
-    createRequestOne,
     getAllRequested,
     getOneRequested
 };

@@ -11,7 +11,7 @@ async function createAvailabilities(providerId,serviceType_id) {
                 return t.none(
                     `INSERT INTO providerAvailabilities (date, status_id,serviceType_id, provider_id)
                      VALUES ($1,$2, $3,$4)`,
-                    [date, 1,serviceType_id, providerId]
+                    [date, 1,null, providerId]
                 );
             });
             await t.batch(insertAvailabilityQueries);

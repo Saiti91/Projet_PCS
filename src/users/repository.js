@@ -27,8 +27,6 @@ async function createProvider(provider, address) {
 
         // Créer l'adresse pour le fournisseur de services
         const newAddress = await createAddress(address, t);
-        console.log(newAddress)
-        console.log(newAddress.address_id)
         const serviceProvider = {
             name: provider.name,
             address_id: newAddress.address_id,

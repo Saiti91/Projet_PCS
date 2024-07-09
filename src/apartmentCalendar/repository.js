@@ -28,6 +28,7 @@ async function getByApartmentId(apartmentId) {
     }
     try {
         const statusId = await db.one('SELECT id FROM availability_status WHERE status_name = $1', ['unavailable']);
+        console.log('statusId:', statusId.id)
         const calendarQuery = `
             SELECT json_build_object('status_id', appartCalendar.status_id, 'date', appartCalendar.date) AS entry
             FROM apartmentAvailabilities appartCalendar
@@ -59,8 +60,8 @@ async function getAllAvailabilities() {
 async function updateAvailabilities(apartmentId, availabilities) {
     try {
         await db.tx(async t => {
-            const updateQueries = availabilities.map(async ({date, status}) => {
-                const statusId = await t.one('SELECT id FROM availability_status WHERE status_name = $1', [status]);
+            const updateQueries = availabilities.map(async ({ date, available }) => {
+                const statusId = await t.one('SELECT id FROM availability_status WHERE status_name = $1', [available]);
                 return t.none(
                     `UPDATE apartmentAvailabilities
                      SET status_id = $1
@@ -77,6 +78,7 @@ async function updateAvailabilities(apartmentId, availabilities) {
         throw error;
     }
 }
+
 
 async function deleteAvailabilitiesByApartmentId(apartmentId) {
     try {

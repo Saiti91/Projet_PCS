@@ -7,7 +7,7 @@ const createApartmentAvailabilitySchema = Joi.object({
 const updateApartmentAvailabilitySchema = Joi.object({
     dates: Joi.array().items(Joi.object({
         date: Joi.date().required(),
-        status: Joi.string().required() // Changed to 'status' to match the repository function
+        available: Joi.string().required() // Changed to 'status' to match the repository function
     })).required(),
     apartment_id: Joi.number().integer().positive().required()
 });

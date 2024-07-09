@@ -17,6 +17,7 @@ async function getAll() {
     return await Repository.getAllAvailabilities();
 }
 
+// Validation and preparation function
 async function updateAvailabilities(apartmentId, dates) {
     const { value, error } = updateApartmentAvailabilitySchema.validate({
         apartment_id: apartmentId,
@@ -29,6 +30,8 @@ async function updateAvailabilities(apartmentId, dates) {
     if (error) {
         throw error;
     }
+
+    // Call the database update function with validated data
     return await Repository.updateAvailabilities(apartmentId, value.dates);
 }
 

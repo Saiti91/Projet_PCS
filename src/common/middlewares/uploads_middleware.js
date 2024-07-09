@@ -14,19 +14,19 @@ const storage = multer.diskStorage({
             uploadPath = path.join(__dirname, '../../assets/tmp');
         }
         if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, {recursive: true});
+            fs.mkdirSync(uploadPath, { recursive: true });
         }
         cb(null, uploadPath);
     },
     filename: (req, file, cb) => {
-        cb(null, Date.now() + path.extname(file.originalname)); // Rename file with timestamp
+        cb(null, `${Date.now()}${path.extname(file.originalname)}`); // Use original file extension
     }
 });
 
 // Initialize upload
 const upload = multer({
     storage: storage,
-    limits: {fileSize: 5000000}, // Limit file size to 1MB
+    limits: { fileSize: 5000000 }, // Limit file size to 5MB
     fileFilter: (req, file, cb) => {
         checkFileType(file, cb);
     }
