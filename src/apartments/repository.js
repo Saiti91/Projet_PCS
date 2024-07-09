@@ -224,6 +224,66 @@ async function getOne(id) {
     }
 }
 
+// Récupérer tous les biens d'un utilisateur par l'id du user
+async function getUserOne(userId) {
+    if (!userId) {
+        throw new Error("User ID is required.");
+    }
+
+    try {
+        const apartmentQuery = `
+            SELECT a.apartments_id,
+                   a.name,
+                   a.created_at,
+                   a.surface,
+                   addr.street,
+                   addr.building,
+                   addr.apartmentNumber,
+                   addr.number,
+                   addr.addressComplement,
+                   addr.CP,
+                   addr.town,
+                   a.capacity,
+                   a.apartmentsType_id,
+                   at.name                     AS apartment_type,
+                   a.numberOfRoom,
+                   a.price,
+                   ARRAY_AGG(DISTINCT ai.path) AS images,
+                   ARRAY_AGG(DISTINCT af.name) AS features,
+                   u.email                     AS owner_email
+            FROM apartments a
+                     JOIN address addr ON a.address_id = addr.address_id
+                     JOIN users u ON a.owner_id = u.users_id
+                     LEFT JOIN apartmentsImage ai ON a.apartments_id = ai.apartment_id
+                     LEFT JOIN apartmentToFeatures atf ON a.apartments_id = atf.apartment_id
+                     LEFT JOIN apartmentFeatures af ON atf.feature_id = af.feature_id
+                     LEFT JOIN apartmentsTypes at ON a.apartmentsType_id = at.apartmentsTypes_id
+            WHERE a.owner_id = $1
+            GROUP BY a.apartments_id, addr.street, addr.building, addr.apartmentNumber, addr.number,
+                     addr.addressComplement, addr.CP, addr.town, at.name, u.email;
+        `;
+
+        const apartments = await db.manyOrNone(apartmentQuery, [userId]);
+        if (!apartments) {
+            throw new Error(`No apartments found for user ID ${userId}`);
+        }
+
+        // Récupérer le calendrier pour chaque bien
+        for (let apartment of apartments) {
+            const calendarEntries = await calendar.getById(apartment.apartments_id);
+            apartment.calendar = calendarEntries;
+        }
+
+        return apartments;
+    } catch (error) {
+        console.error(`Failed to retrieve apartments for user ID ${userId}:`, error);
+        throw error;
+    }
+}
+
+module.exports = { getUserOne };
+
+
 async function getLongAndLat(apartmentId) {
     try {
         const res = await db.oneOrNone(`
@@ -539,5 +599,6 @@ module.exports = {
     requestCreateOne,
     deleteRequestedOne,
     getAllRequested,
-    getOneRequested
+    getOneRequested,
+    getUserOne
 };

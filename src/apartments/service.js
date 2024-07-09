@@ -204,6 +204,16 @@ async function getOne(id) {
     }
 }
 
+// Fonction asynchrone pour récupérer un/pls emplacement par id du user
+async function getUserOne(userId) {
+    try {
+        return await Repository.getUserOne(userId);
+    } catch (error) {
+        console.error(`Failed to retrieve location with ID ${userId}:`, error);
+        throw new Error(`Failed to retrieve location with ID ${userId}.`);
+    }
+}
+
 async function getApartmentsTypes() {
     try {
         return await Repository.getApartmentTypes();
@@ -323,5 +333,6 @@ module.exports = {
     requestCreateOne,
     deleteRequestedOne,
     getOneRequest,
-    getAllRequest
+    getAllRequest,
+    getUserOne
 };

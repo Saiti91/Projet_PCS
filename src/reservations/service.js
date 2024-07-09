@@ -72,8 +72,8 @@ async function getOne(id) {
 }
 
 // Fonction asynchrone pour récupérer une réservation par son identifiant
-async function getUserOne(id) {
-    return await Repository.getUserOne(id);
+async function getUserReservations(userId) {
+    return await Repository.getUserOne(userId);
 }
 
 // Fonction asynchrone pour récupérer toutes les réservations
@@ -105,4 +105,4 @@ async function deleteOne(id) {
 }
 
 // Exportation des fonctions pour leur utilisation dans d'autres modules
-module.exports = {createOne, getOne, getAll, updateOne, deleteOne,getUserOne};
+module.exports = {createOne, getOne, getAll, updateOne, deleteOne,getUserReservations};

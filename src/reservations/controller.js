@@ -31,13 +31,13 @@ controller.get(
 );
 
 controller.get(
-    "/users/:id",
-    authorize(["staff", "customer", "owner", "provider","admin"]),
+    "/users/:userId",
+    authorize(["staff", "customer", "owner", "provider", "admin"]),
     (req, res, next) => {
-        Service.getUserOne(Number(req.params.id))
+        Service.getUserReservations(Number(req.params.userId))
             .then((data) => {
-                if (!data) {
-                    throw new NotFoundError(`Could not find reservation with user id ${req.params.id}`);
+                if (!data || data.length === 0) {
+                    return res.status(404).json({ message: "Aucune réservation trouvée pour cet utilisateur." });
                 }
                 res.json(data);
             })
