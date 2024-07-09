@@ -76,10 +76,9 @@ controller.get("/:id", async (req, res, next) => {
 //pour récupérer tous les biens d'un utilisateur
 controller.get("/user/:userId", async (req, res, next) => {
     try {
-        console.log(req.params.id)
-        const data = await apartmentsServices.getUserOne(Number(req.params.id));
+        const data = await apartmentsServices.getUserOne(Number(req.params.userId));
         if (data === null) {
-            throw new NotFoundError(`Could not find location with id ${req.params.id}`);
+            throw new NotFoundError(`Could not find location with id ${req.params.userId}`);
         }
         res.json(data);
     } catch (err) {
