@@ -40,7 +40,7 @@ function authorize(roles) {
             if (roles.includes(req.auth && req.auth.urole) || (req.auth && req.auth.urole === "admin")) {
                 next();
             } else {
-                throw new UnauthorizedError("You do not have permission to perform this action.");
+                return next(new UnauthorizedError("You do not have permission to perform this action."));
             }
         });
     };
