@@ -41,7 +41,7 @@ controller.delete("/:id", authorize(["staff", "admin"]), (req, res, next) => {
         .catch((err) => next(err));
 });
 
-controller.patch("/availability/:id", authorize(["staff", "provider", "admin"]), (req, res, next) => {
+controller.patch("/availability/:id", authorize(["staff", "provider", "admin", "owner"]), (req, res, next) => {
     console.log("Received PATCH request:", req.body);
     const apartmentId = Number(req.params.id);
     const { dates } = req.body;
