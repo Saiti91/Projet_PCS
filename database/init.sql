@@ -228,6 +228,7 @@ CREATE TABLE providerAvailabilities
 (
     providerAvailabilities_id serial PRIMARY KEY,
     status_id                 int REFERENCES availability_status (id) NOT NULL,
+    serviceType_id            int REFERENCES serviceTypes (serviceTypes_id) ON DELETE CASCADE,
     date                      date                                    NOT NULL,
     provider_id               int REFERENCES servicesProviders (servicesProviders_id) ON DELETE CASCADE
 );

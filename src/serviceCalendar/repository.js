@@ -2,21 +2,21 @@ const db = require("../common/db_handler");
 const generateDates = require('../common/middlewares/generateDate');
 
 // Créer des disponibilités pour un fournisseur de services
-async function createAvailabilities(providerId) {
-    const dates = generateDates(360); // Générer 720 dates à partir d'aujourd'hui
+async function createAvailabilities(providerId,serviceType_id) {
+    const dates = generateDates(360); // Générer 360 dates à partir d'aujourd'hui
 
     try {
         await db.tx(async t => {
             const insertAvailabilityQueries = dates.map(date => {
                 return t.none(
-                    `INSERT INTO providerAvailabilities (date, status_id, provider_id)
-                     VALUES ($1, $2, $3)`,
-                    [date, 1, providerId]
+                    `INSERT INTO providerAvailabilities (date, status_id,serviceType_id, provider_id)
+                     VALUES ($1,$2, $3,$4)`,
+                    [date, 1,serviceType_id, providerId]
                 );
             });
             await t.batch(insertAvailabilityQueries);
         });
-        console.log('Successfully inserted 720 availabilities for provider');
+        console.log('Successfully inserted 360 availabilities for provider');
     } catch (error) {
         console.error("Failed to create availabilities:", error);
         throw error;
@@ -54,16 +54,16 @@ async function getAllAvailabilities() {
 }
 
 // Mettre à jour les disponibilités d'un fournisseur de services
-async function updateAvailabilities(providerId, availabilities) {
+async function updateAvailabilities(providerId, serviceType_id, availabilities) {
     try {
         await db.tx(async t => {
             const updateQueries = availabilities.map(({date}) => {
                 return t.none(
                     `UPDATE providerAvailabilities
-                     SET status_id = $1
+                     SET status_id = $1, serviceType_id = $4
                      WHERE provider_id = $2
                        AND date = $3`,
-                    [3, providerId, date]
+                    [3, providerId, date, serviceType_id]
                 );
             });
             await t.batch(updateQueries);
@@ -74,6 +74,7 @@ async function updateAvailabilities(providerId, availabilities) {
         throw error;
     }
 }
+
 
 // Supprimer les disponibilités d'un fournisseur de services par ID
 async function deleteAvailabilitiesByProviderId(providerId) {

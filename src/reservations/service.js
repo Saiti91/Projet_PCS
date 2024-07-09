@@ -53,7 +53,10 @@ async function createOne(reservation) {
         const endDate = new Date(service.date_end);
 
         while (currentDate <= endDate) {
-            availabilities.push({ date: currentDate.toISOString().split('T')[0] });
+            availabilities.push({
+                date: currentDate.toISOString().split('T')[0],
+                serviceType_id: service.serviceType_id
+            });
             currentDate.setDate(currentDate.getDate() + 1);
         }
 
@@ -62,6 +65,7 @@ async function createOne(reservation) {
 
     return newReservation;
 }
+
 // Fonction asynchrone pour récupérer une réservation par son identifiant
 async function getOne(id) {
     return await Repository.getOne(id);

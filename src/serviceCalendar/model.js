@@ -6,6 +6,7 @@ const createAvailabilitySchema = Joi.object({
 
 const updateAvailabilitySchema = Joi.object({
     providerId: Joi.number().integer().required(),
+    serviceType_id: Joi.number().integer().required(),
     availabilities: Joi.array().items(
         Joi.object({
             date: Joi.date().required(),
