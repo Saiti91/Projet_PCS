@@ -13,6 +13,67 @@ const distCalc = require("../common/middlewares/distanceCalculation_middleware")
 const { InvalidArgumentError, UnauthorizedError } = require("../common/service_errors");
 const { getGeoCoordinates } = require("../common/middlewares/gps_middleware");
 
+
+
+async function createRequestOne(serviceData) {
+    console.log('Service data received:', serviceData);
+
+    const { value, error } = createServicesSchema.validate(serviceData);
+    if (error) {
+        console.log('Validation error:', error.details);
+        throw error;
+    }
+    console.log('Validated data:', value);
+
+    const existingService = await Repository.getOneBy('name', value.name);
+    if (existingService) {
+        console.log('Service name already taken:', value.name);
+        throw new InvalidArgumentError('This service name is already taken.');
+    }
+
+    let providerId;
+    const existingUser = await UserRepository.getOneBy('email', value.email);
+    const userProvider = {
+        name: value.name,
+        role: 'provider',
+        email: value.email,
+        password: 'password',
+        telephone: value.phone
+    };
+    if (existingUser) {
+        providerId = await UserRepository.createRequestProvider(userProvider, value.address);
+    }
+
+    const coordinates = await getGeoCoordinates(value.address);
+    if (!coordinates) {
+        console.log('Failed to geocode address:', value.address);
+        throw new Error('Failed to geocode address.');
+    }
+    value.address.latitude = coordinates.latitude;
+    value.address.longitude = coordinates.longitude;
+
+    try {
+        await db.tx(async t => {
+            value.address_id = await Repository.createAddress(t, value.address);
+
+            for (const service of value.services) {
+                const serviceTypeId = await Repository.getServiceTypeIdByName(service.name);
+                if (!serviceTypeId) {
+                    throw new InvalidArgumentError(`Service type ${service.name} not found`);
+                }
+                console.log('Adding service:', service.name, 'to provider:', providerId.serviceprovider_id);
+                await Repository.addServiceToProvider(t, providerId.serviceprovider_id, { serviceType_id: serviceTypeId, price: service.price });
+            }
+
+            await availableServicesRepository.createAvailabilities(providerId.serviceprovider_id, t);
+        });
+        return { message: 'Service created successfully', id: providerId.serviceprovider_id };
+    } catch (error) {
+        console.error("Error creating location:", error);
+        throw new InvalidArgumentError("Failed to create location.");
+    }
+}
+
 async function createOne(serviceData) {
     console.log('Service data received:', serviceData);
 

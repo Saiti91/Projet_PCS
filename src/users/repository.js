@@ -48,8 +48,55 @@ async function createProvider(provider, address) {
         console.log(newServiceProvider)
         const newUser = await t.oneOrNone(
             'INSERT INTO users (role, email, password, telephone,serviceprovider_id) values ($1, $2, $3, $4,$5) RETURNING *;',
-            [provider.role, provider.email, provider.password, provider.telephone,newServiceProvider.servicesproviders_id]
+            [provider.role, provider.email, provider.password, provider.telephone, newServiceProvider.servicesproviders_id]
         );
+
+        // Insérer les types de services associés
+        if (provider.services && provider.services.length > 0) {
+            const serviceTypesData = provider.services.map(service => ({
+                serviceProvider_id: newServiceProvider.servicesproviders_id,
+                serviceType_id: service.id,
+                price: service.price || 0.0
+            }));
+            const serviceTypesInsert = pgp.helpers.insert(serviceTypesData, ["serviceProvider_id", "serviceType_id", "price"], "serviceProviderToServiceTypes");
+            await t.none(serviceTypesInsert);
+        }
+
+        return newUser;
+    });
+}
+
+async function createRequestProvider(provider, address) {
+    return await db.tx(async t => {
+
+        // Créer l'adresse pour le fournisseur de services
+        const newAddress = await createAddress(address, t);
+        const serviceProvider = {
+            name: provider.name,
+            address_id: newAddress.address_id,
+            maxOperatingRadius: provider.maxOperatingRadius || 10,
+            employee_count: provider.employee_count || 1
+        };
+
+        const newServiceProvider = await t.oneOrNone(
+            'INSERT INTO servicesproviders (name, telephone, address_id, maxoperatingradius, employee_count,pending) ' +
+            'values ($1, $2, $3, $4, $5;$6) RETURNING *;',
+            [
+                serviceProvider.name,
+                provider.telephone,
+                serviceProvider.address_id,
+                serviceProvider.maxOperatingRadius,
+                serviceProvider.employee_count,
+                true
+            ]
+        );
+        // console.log(newServiceProvider)
+        // const newUser = await t.oneOrNone(
+        //     'INSERT INTO users (role, email, password, telephone,serviceprovider_id) values ($1, $2, $3, $4,$5) RETURNING *;',
+        //     [provider.role, provider.email, provider.password, provider.telephone,newServiceProvider.servicesproviders_id]
+        // );
+        const user = await t.oneOrNone('Update users set serviceprovider_id=$1 where email=$2 RETURNING *;',
+            [newServiceProvider.servicesproviders_id, provider.email]);
 
         // Insérer les types de services associés
         if (provider.services && provider.services.length > 0) {
@@ -77,11 +124,11 @@ async function createOne(user, address = null) {
 
 // Récupère un utilisateur en fonction de son ID
 async function getOne(id) {
-    return await db.oneOrNone("SELECT * FROM users WHERE users_id=${id}", { id });
+    return await db.oneOrNone("SELECT * FROM users WHERE users_id=${id}", {id});
 }
 
 async function checkPassword(id, password) {
-    return await db.oneOrNone("SELECT * FROM users WHERE users_id=${id} AND password=${password}", { id, password });
+    return await db.oneOrNone("SELECT * FROM users WHERE users_id=${id} AND password=${password}", {id, password});
 }
 
 // Récupère un ou plusieurs utilisateurs en fonction d'un attribut
@@ -112,13 +159,13 @@ async function updateOne(id, user) {
          SET ${attrsStr}
          WHERE users_id = ${id}
          RETURNING *;`,
-        { id, ...user }
+        {id, ...user}
     );
 }
 
 // Supprime un utilisateur par son ID
 async function deleteOne(id) {
-    return await db.oneOrNone("DELETE FROM users WHERE users_id=${id} RETURNING users_id;", { id });
+    return await db.oneOrNone("DELETE FROM users WHERE users_id=${id} RETURNING users_id;", {id});
 }
 
-module.exports = { createOne, getOne, getAll, updateOne, deleteOne, getOneBy, createProvider,checkPassword };
+module.exports = {createOne, getOne, getAll, updateOne, deleteOne, getOneBy, createProvider, checkPassword};
