@@ -104,4 +104,8 @@ async function deleteOne(id, issuer) {
     return await Repository.deleteOne(id);
 }
 
-module.exports = {createOne, getOne, getAll, updateOne, deleteOne};
+async function getProviderOne(id){
+    return await Repository.getOneBy("serviceprovider_id",id);
+}
+
+module.exports = {createOne, getOne, getAll, updateOne, deleteOne,getProviderOne};

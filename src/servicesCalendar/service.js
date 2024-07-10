@@ -1,4 +1,4 @@
-// serviceCalendar/service.js
+// servicesCalendar/service.js
 const {createAvailabilitySchema, updateAvailabilitySchema} = require("./model");
 const Repository = require("./repository");
 const {InvalidArgumentError} = require("../common/service_errors");

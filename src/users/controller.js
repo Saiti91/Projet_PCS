@@ -19,6 +19,24 @@ controller.get(
     },
 );
 
+controller.get(
+    "/provider/:id",
+    authorize(["staff", "customer", "owner", "provider", "admin"]),
+    (req, res, next) => {
+        usersService.getProviderOne(Number(req.params.id))
+            .then((data) => {
+                if (data === null) {
+                    throw new NotFoundError(
+                        `Could not find user with id ${req.params.id}`
+                    );
+                }
+
+                res.json(data);
+            })
+            .catch((err) => next(err));
+    },
+);
+
 //Vérifie le role et appel la méthode GET en fonction de l'id
 controller.get(
     "/:id",

@@ -1,4 +1,4 @@
-// serviceCalendar/controller.js
+// servicesCalendar/controller.js
 const {Router} = require("express");
 const service = require("./service");
 const {NotFoundError} = require("../common/http_errors");

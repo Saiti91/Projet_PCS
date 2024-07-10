@@ -130,12 +130,12 @@ DO $$
                 -- Insertions dans la table providerAvailabilities
                 INSERT INTO providerAvailabilities (status_id, serviceType_id, date, provider_id)
                 VALUES
-                    (1, 1, current_day, 1),
-                    (1, 2, current_day, 2),
-                    (1, 3, current_day, 3),
-                    (1, 4, current_day, 4),
-                    (1, 5, current_day, 5),
-                    (1, 5, current_day, 6);
+                    (1, null, current_day, 1),
+                    (1, null, current_day, 2),
+                    (1, null, current_day, 3),
+                    (1, null, current_day, 4),
+                    (1, null, current_day, 5),
+                    (1, null, current_day, 6);
 
                 -- Insertions dans la table apartmentAvailabilities
                 INSERT INTO apartmentAvailabilities (status_id, date, apartment_id)

@@ -22,6 +22,11 @@ async function login(loginForm) {
     if (!user) {
         throw new AuthError("Could not login: unknown email provided");
     }
+    const password = await userRepository.checkPassword(user.users_id, value.password);
+    // Vérification du mot de passe de l'utilisateur
+    if (!password) {
+        throw new AuthError("Could not login: password or email is incorrect");
+    }
     // Génération du jeton JWT pour l'utilisateur et retour du jeton
     return generateJWT(user.users_id, user.role);
 }

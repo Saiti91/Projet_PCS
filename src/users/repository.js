@@ -80,6 +80,10 @@ async function getOne(id) {
     return await db.oneOrNone("SELECT * FROM users WHERE users_id=${id}", { id });
 }
 
+async function checkPassword(id, password) {
+    return await db.oneOrNone("SELECT * FROM users WHERE users_id=${id} AND password=${password}", { id, password });
+}
+
 // Récupère un ou plusieurs utilisateurs en fonction d'un attribut
 async function getOneBy(attribute, value) {
     const res = await db.oneOrNone(
@@ -117,4 +121,4 @@ async function deleteOne(id) {
     return await db.oneOrNone("DELETE FROM users WHERE users_id=${id} RETURNING users_id;", { id });
 }
 
-module.exports = { createOne, getOne, getAll, updateOne, deleteOne, getOneBy, createProvider };
+module.exports = { createOne, getOne, getAll, updateOne, deleteOne, getOneBy, createProvider,checkPassword };

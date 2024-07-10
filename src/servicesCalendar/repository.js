@@ -26,13 +26,14 @@ async function createAvailabilities(providerId,serviceType_id) {
 // Récupérer les disponibilités d'un fournisseur de services par ID
 async function getById(providerId) {
     try {
-        return await db.any(
-            `SELECT *
+        const availabilities = await db.any(`SELECT *
              FROM providerAvailabilities
-             WHERE provider_id = $1
+             WHERE provider_id = $1 AND serviceType_id IS NOT NULL
              ORDER BY date`,
             [providerId]
         );
+        console.log(availabilities)
+        return availabilities;
     } catch (error) {
         console.error("Failed to retrieve availabilities:", error);
         throw error;

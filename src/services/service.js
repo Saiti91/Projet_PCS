@@ -8,7 +8,7 @@ const {
 const Repository = require("./repository");
 const UserRepository = require("../users/repository");
 const apartmentsRepository = require("../apartments/repository");
-const availableServicesRepository = require("../serviceCalendar/repository");
+const availableServicesRepository = require("../servicesCalendar/repository");
 const distCalc = require("../common/middlewares/distanceCalculation_middleware");
 const { InvalidArgumentError, UnauthorizedError } = require("../common/service_errors");
 const { getGeoCoordinates } = require("../common/middlewares/gps_middleware");
