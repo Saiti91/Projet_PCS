@@ -46,7 +46,7 @@ controller.patch("/availability/:id", authorize(["staff", "provider", "admin", "
     const apartmentId = Number(req.params.id);
     const { dates } = req.body;
     service.updateAvailabilities(apartmentId, dates)
-        .then((data) => {
+        .then((data ) => {
             if (data === null) {
                 throw new NotFoundError(`Could not find apartment with id ${req.params.id}`);
             }
