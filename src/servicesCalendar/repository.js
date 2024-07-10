@@ -54,11 +54,11 @@ async function getAllAvailabilities() {
     }
 }
 
-// Mettre à jour les disponibilités d'un fournisseur de services
 async function updateAvailabilities(providerId, availabilities) {
     try {
         await db.tx(async t => {
             const updateQueries = availabilities.map(({ date, serviceType_id }) => {
+                console.log(`Updating provider ${providerId} for date ${date} and serviceType_id ${serviceType_id} to status_id 3`);
                 return t.none(
                     `UPDATE providerAvailabilities
                      SET status_id = $1, serviceType_id = $4
@@ -75,6 +75,7 @@ async function updateAvailabilities(providerId, availabilities) {
         throw error;
     }
 }
+
 
 
 

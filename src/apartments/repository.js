@@ -191,38 +191,58 @@ async function getOne(id) {
                    addr.CP,
                    addr.town,
                    a.capacity,
+                   addr.longitude,
+                   addr.latitude,
                    a.apartmentsType_id,
-                   at.name                     AS apartment_type,
+                   at.name AS apartment_type,
                    a.numberOfRoom,
                    a.price,
                    ARRAY_AGG(DISTINCT ai.path) AS images,
                    ARRAY_AGG(DISTINCT af.name) AS features,
-                   u.email                     AS owner_email
+                   u.email AS owner_email
             FROM apartments a
-                     JOIN address addr ON a.address_id = addr.address_id
-                     JOIN users u ON a.owner_id = u.users_id
-                     LEFT JOIN apartmentsImage ai ON a.apartments_id = ai.apartment_id
-                     LEFT JOIN apartmentToFeatures atf ON a.apartments_id = atf.apartment_id
-                     LEFT JOIN apartmentFeatures af ON atf.feature_id = af.feature_id
-                     LEFT JOIN apartmentsTypes at ON a.apartmentsType_id = at.apartmentsTypes_id
+            JOIN address addr ON a.address_id = addr.address_id
+            JOIN users u ON a.owner_id = u.users_id
+            LEFT JOIN apartmentsImage ai ON a.apartments_id = ai.apartment_id
+            LEFT JOIN apartmentToFeatures atf ON a.apartments_id = atf.apartment_id
+            LEFT JOIN apartmentFeatures af ON atf.feature_id = af.feature_id
+            LEFT JOIN apartmentsTypes at ON a.apartmentsType_id = at.apartmentsTypes_id
             WHERE a.apartments_id = $1
             GROUP BY a.apartments_id, addr.street, addr.building, addr.apartmentNumber, addr.number,
-                     addr.addressComplement, addr.CP, addr.town, at.name, u.email;
+                     addr.addressComplement, addr.CP, addr.town, addr.longitude, addr.latitude, at.name, u.email;
         `;
 
+        // Retrieve apartment details
         const apartment = await db.oneOrNone(apartmentQuery, [id]);
         if (!apartment) {
             throw new Error(`No apartment found with ID ${id}`);
         }
 
+        // Retrieve and assign the calendar data to the apartment
         apartment.calendar = await calendar.getById(id);
 
+        console.log(apartment);
         return apartment;
     } catch (error) {
         console.error(`Failed to retrieve apartment with ID ${id}:`, error);
         throw error;
     }
 }
+
+async function checkAvailabilities(start_date, end_date, apartment_id) {
+    const query = `
+        SELECT COUNT(*) AS count
+        FROM apartmentAvailabilities
+        WHERE apartment_id = $1
+        AND date >= $2
+        AND date <= $3
+        AND status_id = (SELECT id FROM availability_status WHERE status_name = 'reserved')
+    `;
+    const values = [apartment_id, start_date, end_date];
+    const { rows } = await db.query(query, values);
+    return rows[0].count === 0;
+}
+
 
 // Récupérer tous les biens d'un utilisateur par l'id du user
 async function getUserOne(userId) {
@@ -394,57 +414,57 @@ async function getAllRequested() {
     }
 }
 
-async function getOneRequested(id) {
-    if (!id) {
-        throw new Error("Requested Apartment ID is required.");
-    }
-
-    try {
-        const requestedApartmentQuery = `
-            SELECT ra.requestedApartments_id,
-                   ra.name,
-                   ra.created_at,
-                   ra.surface,
-                   addr.street,
-                   addr.building,
-                   addr.apartmentNumber,
-                   addr.number,
-                   addr.addressComplement,
-                   addr.CP,
-                   addr.town,
-                   ra.capacity,
-                   ra.apartmentsType_id,
-                   at.name                     AS apartment_type,
-                   ra.numberOfRoom,
-                   ra.price,
-                   ARRAY_AGG(DISTINCT ai.path) AS images,
-                   ARRAY_AGG(DISTINCT af.name) AS features,
-                   u.email                     AS owner_email
-            FROM requestedApartments ra
-                     JOIN address addr ON ra.address_id = addr.address_id
-                     JOIN users u ON ra.owner_id = u.users_id
-                     LEFT JOIN apartmentsImage ai ON ra.requestedApartments_id = ai.apartment_id
-                     LEFT JOIN apartmentToFeatures atf ON ra.requestedApartments_id = atf.apartment_id
-                     LEFT JOIN apartmentFeatures af ON atf.feature_id = af.feature_id
-                     LEFT JOIN apartmentsTypes at ON ra.apartmentsType_id = at.apartmentsTypes_id
-            WHERE ra.requestedApartments_id = $1
-            GROUP BY ra.requestedApartments_id, addr.street, addr.building, addr.apartmentNumber, addr.number,
-                     addr.addressComplement, addr.CP, addr.town, at.name, u.email;
-        `;
-
-        const requestedApartment = await db.oneOrNone(requestedApartmentQuery, [id]);
-        if (!requestedApartment) {
-            throw new Error(`No requested apartment found with ID ${id}`);
-        }
-
-        requestedApartment.calendar = await calendar.getById(id);
-
-        return requestedApartment;
-    } catch (error) {
-        console.error(`Failed to retrieve requested apartment with ID ${id}:`, error);
-        throw error;
-    }
-}
+// async function getOneRequested(id) {
+//     if (!id) {
+//         throw new Error("Requested Apartment ID is required.");
+//     }
+//
+//     try {
+//         const requestedApartmentQuery = `
+//             SELECT ra.requestedApartments_id,
+//                    ra.name,
+//                    ra.created_at,
+//                    ra.surface,
+//                    addr.street,
+//                    addr.building,
+//                    addr.apartmentNumber,
+//                    addr.number,
+//                    addr.addressComplement,
+//                    addr.CP,
+//                    addr.town,
+//                    ra.capacity,
+//                    ra.apartmentsType_id,
+//                    at.name                     AS apartment_type,
+//                    ra.numberOfRoom,
+//                    ra.price,
+//                    ARRAY_AGG(DISTINCT ai.path) AS images,
+//                    ARRAY_AGG(DISTINCT af.name) AS features,
+//                    u.email                     AS owner_email
+//             FROM requestedApartments ra
+//                      JOIN address addr ON ra.address_id = addr.address_id
+//                      JOIN users u ON ra.owner_id = u.users_id
+//                      LEFT JOIN apartmentsImage ai ON ra.requestedApartments_id = ai.apartment_id
+//                      LEFT JOIN apartmentToFeatures atf ON ra.requestedApartments_id = atf.apartment_id
+//                      LEFT JOIN apartmentFeatures af ON atf.feature_id = af.feature_id
+//                      LEFT JOIN apartmentsTypes at ON ra.apartmentsType_id = at.apartmentsTypes_id
+//             WHERE ra.requestedApartments_id = $1
+//             GROUP BY ra.requestedApartments_id, addr.street, addr.building, addr.apartmentNumber, addr.number,
+//                      addr.addressComplement, addr.CP, addr.town, at.name, u.email;
+//         `;
+//
+//         const requestedApartment = await db.oneOrNone(requestedApartmentQuery, [id]);
+//         if (!requestedApartment) {
+//             throw new Error(`No requested apartment found with ID ${id}`);
+//         }
+//
+//         requestedApartment.calendar = await calendar.getById(id);
+//
+//         return requestedApartment;
+//     } catch (error) {
+//         console.error(`Failed to retrieve requested apartment with ID ${id}:`, error);
+//         throw error;
+//     }
+// }
 
 
 async function getCarousel() {
@@ -599,6 +619,7 @@ module.exports = {
     requestCreateOne,
     deleteRequestedOne,
     getAllRequested,
-    getOneRequested,
-    getUserOne
+    //getOneRequested,
+    getUserOne,
+    checkAvailabilities,
 };

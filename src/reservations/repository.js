@@ -40,7 +40,6 @@ async function createOne(reservation, services) {
     }
 }
 
-
 // Fonction asynchrone pour récupérer une réservation par son identifiant
 async function getOne(id) {
     return await db.oneOrNone("SELECT * FROM reservations WHERE reservation_id=$1", [id]);
@@ -101,7 +100,7 @@ async function getOverlappingReservations(start, end, appartId) {
 }
 
 // Fonction asynchrone pour vérifier la disponibilité d'un appartement
-async function checkAvailability(start, end, appartId) {
+async function checkAvailabilityUnavailable(start, end, appartId) {
     const query = `
         SELECT COUNT(*)
         FROM generate_series($1::date, $2::date, '1 day') AS g(day)
@@ -118,7 +117,24 @@ async function checkAvailability(start, end, appartId) {
     }
 }
 
-// Exportation des fonctions pour leur utilisation dans d'autres modules
+async function checkAvailabilityReserved(start, end, appartId) {
+    const query = `
+        SELECT COUNT(a.date) AS reserved_count
+        FROM generate_series($1::date, $2::date, '1 day') AS g(day)
+                 LEFT JOIN apartmentAvailabilities a
+                           ON a.date = g.day AND a.apartment_id = $3
+        WHERE a.status_id = (SELECT id FROM availability_status WHERE status_name = 'reserved');
+    `;
+
+    try {
+        const result = await db.one(query, [start, end, appartId]);
+        return parseInt(result.reserved_count) === 0; // Returns true if all days are available, false otherwise
+    } catch (error) {
+        console.error("Error checking availability:", error);
+        throw error;
+    }
+}
+
 module.exports = {
     createOne,
     getOne,
@@ -126,6 +142,7 @@ module.exports = {
     getOverlappingReservations,
     updateOne,
     deleteOne,
-    checkAvailability,
-    getUserOne
+    checkAvailability: checkAvailabilityUnavailable,
+    getUserOne,
+    checkAvailabilityReserved
 };

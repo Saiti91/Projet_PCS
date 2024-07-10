@@ -1,7 +1,8 @@
 // apartments/service.js
-const {createApartmentSchema, updateApartmentSchema} = require("./model");
+const {createApartmentSchema, updateApartmentSchema,checkAvailableSchema} = require("./model");
 const Repository = require("./repository");
 const UserRepository = require("../users/repository");
+const reservationRepository = require("../reservations/repository")
 const {InvalidArgumentError} = require("../common/service_errors");
 const {getGeoCoordinates} = require("../common/middlewares/gps_middleware");
 const db = require("../common/db_handler");
@@ -214,6 +215,19 @@ async function getUserOne(userId) {
     }
 }
 
+async function checkAvailabilities(start_date, end_date, apartment_id) {
+    const { error } = checkAvailableSchema.validate({ start_date, end_date, apartment_id });
+    if (error) {
+        throw new InvalidArgumentError("Invalid date or apartment data!");
+    }
+    try {
+        return await reservationRepository.checkAvailabilityReserved(start_date, end_date, apartment_id);
+    } catch (error) {
+        console.error("Failed to retrieve availabilities:", error);
+        throw new Error("Failed to retrieve availabilities.");
+    }
+}
+
 async function getApartmentsTypes() {
     try {
         return await Repository.getApartmentTypes();
@@ -334,5 +348,6 @@ module.exports = {
     deleteRequestedOne,
     getOneRequest,
     getAllRequest,
-    getUserOne
+    getUserOne,
+    checkAvailabilities
 };

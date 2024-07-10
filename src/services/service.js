@@ -133,7 +133,7 @@ async function getOne(id, issuer) {
 
 async function getServicesWithinRadius(apartment_id, maxDistance) {
     try {
-        const { latitude, longitude } = await apartmentsRepository.getOneRequested(apartment_id);
+        const { latitude, longitude } = await apartmentsRepository.getOne(apartment_id);
 
         const services = await Repository.getAllServicesWithCoordinates();
 

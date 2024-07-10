@@ -25,6 +25,16 @@ controller.get("/request", async (req, res, next) => {
     }
 });
 
+controller.post("/availabilities", async (req, res, next) => {
+    try {
+        const { start_date, end_date, apartment_id } = req.body;
+        const data = await apartmentsServices.checkAvailabilities(start_date, end_date, apartment_id);
+        res.json(data);
+    } catch (err) {
+        next(err);
+    }
+});
+
 controller.get("/apartmentsTypes", async (req, res, next) => {
     try {
         const data = await apartmentsServices.getApartmentsTypes();

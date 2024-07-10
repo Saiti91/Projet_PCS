@@ -46,7 +46,14 @@ const updateApartmentSchema = Joi.object({
     imagePaths: Joi.array().items(Joi.string()).allow(null).optional()
 }).min(1);
 
+const checkAvailableSchema = Joi.object({
+    start_date: Joi.date().iso().required(),
+    end_date: Joi.date().iso().required(),
+    apartment_id: Joi.number().integer().positive().required()
+});
+
 module.exports = {
     createApartmentSchema,
     updateApartmentSchema,
+    checkAvailableSchema
 };
