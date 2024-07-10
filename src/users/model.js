@@ -48,7 +48,8 @@ const updateUserSchema = Joi.object({
     password: Joi.string().optional(),
     first_name: Joi.string().optional(),
     last_name: Joi.string().optional(),
-    telephone: Joi.string().pattern(/^\+?\d{1,15}$/).optional()
+    telephone: Joi.string().pattern(/^\+?\d{1,15}$/).optional(),
+    serviceprovider_id: Joi.number().integer().optional()
 }).min(1);
 
 module.exports = {

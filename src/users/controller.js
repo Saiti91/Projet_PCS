@@ -9,6 +9,7 @@ const controller = Router();
 //TODO: Add Mail service
 
 //Vérifie le role staff et appel la méthode get
+//récupère tous les utilisateurs
 controller.get(
     "/",
     authorize(["staff", "admin"]),
@@ -18,6 +19,7 @@ controller.get(
             .catch((err) => next(err));
     },
 );
+
 
 controller.get(
     "/provider/:id",
@@ -93,7 +95,7 @@ controller.delete(
     },
 );
 
-//Vérification du role et suppression en fonction de paramettre (un saff peut patch tout le monde, un user peut se patch lui-même, etc..)
+//Vérification du role et modification en fonction de paramettre (un saff peut patch tout le monde, un user peut se patch lui-même, etc..)
 controller.patch(
     "/:id",
     authorize(["owner", "customer", "staff", "provider","admin"]),
